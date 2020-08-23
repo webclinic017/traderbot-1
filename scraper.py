@@ -39,10 +39,7 @@ df['csl'] = df['close']-(df['atr']*x)
 df['usl'] = df['csl']
 
 for i in range(1, len(df)):
-    if (df.iloc[i, 1] < df.iloc[i, 6]) or i == 0:
-        continue
-        
-    else:
+    if not ((df.iloc[i, 1] < df.iloc[i, 6]) or i == 0):
         df.iloc[i, 22] = df.iloc[i-1, 22]
 
 print(time.time()-start)
