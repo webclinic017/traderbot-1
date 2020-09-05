@@ -7,7 +7,7 @@ from yahooquery import Ticker
 start = time.time()
 
 tickers = Ticker('fb')
-df = tickers.history(period='2y', interval='1d')
+df = tickers.history(period='2y', interval='90m')
 
 # Columns: ['adjclose', 'close', 'high', 'low', 'open', 'volume']
 df = df.reindex(sorted(df.columns), axis=1)
@@ -46,4 +46,4 @@ print(time.time()-start)
 print(df.columns)
 print(df)
 
-df.to_csv(r'fb.csv')
+df.to_csv('fb.csv')
