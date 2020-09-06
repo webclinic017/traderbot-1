@@ -1,24 +1,25 @@
-import Pyro4
-
-@Pyro4.expose
-class Analyser(object):
+class Analyser():
+    def __init__(self, tickerName, comparator):
+        self.tickerName = tickerName
+        self.comparator = comparator
     
-    @Pyro4.oneway
-    def PseudoTrade(self,TickerName,timeStamp,strategy):
-        print("Adding pseudo trade for " + TickerName + " at " + timeStamp + " (" + strategy + ")")
-        ### Save information into a CSV database full of pseudotrades
+    def inform(self, timeStamp):
+        # TO-DO: Looks through currently trading file
+        # TO-DO: If ticker is currently trading, do intervalAnalysis
+        pass
+    
+    def PseudoTrade(self, timeStamp, strategy):
+        print("Adding pseudo trade for " + self.tickerName + " at " + timeStamp + " (" + strategy + ")")
+        # TO-DO: Create new unique ID (ticker name + counter)
+        
+        ### TO-DO: Save information into a CSV database full of pseudotrades
 
-    @Pyro4.oneway
     def intervalAnalysis(self):
-        a = 1
+        # TO-DO: Read from pseudotrades database
+        for trade in pseudoTrades:
+            # TO-DO: Analyses whether the trade has succeeded or failed for each trade
+            if successfulTrade:
+                self.comparator.updateWeightage("strategy (placeholder)", "+1 point (placeholder)")
+            elif failedTrade:
+                self.comparator.updateWeightage("strategy (placeholder)", "-1 point (placeholder)")
 
-
-### MAIN CODE EXECUTION
-daemon = Pyro4.Daemon()                # make a Pyro daemon
-ns = Pyro4.locateNS()                  # find the name server
-uri = daemon.register(Analyser)   # register the greeting maker as a Pyro object
-ns.register("analyser", uri)
-print("Server Created.")
-Comparator = Pyro4.Proxy("PYRONAME:comparator")
-print("Connected to Analyser.")
-daemon.requestLoop()

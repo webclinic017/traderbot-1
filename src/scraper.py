@@ -3,51 +3,31 @@ import time
 import pandas as pd
 import numpy as np
 from yahooquery import Ticker
-import Pyro4
+from strategyCalculator import StrategyCalculator
 
-start = time.time()
-#############################################
-# 1. REPLACE THIS STATIC SYMBOL LIST WITH ONE THAT READS A CSV FILE FOR THE SYMBOLS
-USsymbol = ['TSLA','AAPL','DOCU']
-UKsymbol = []
-ASIAsymbol = []
-############################################
+class Scraper():
+    def __init__(self, tickerName):
+        self.tickerName = tickerName
+        self.stratCalc = StrategyCalculator(self.tickerName)
+    
+    def update(self):
+        while True:
+            self.scrape()
+            time.sleep(10)
+            
 
-strategyCalculator = Pyro4.Proxy("PYRONAME:strategy.calculator")
-generationtime = time.time()-start
-print("Fetching Data from US Stocks")
-for i in USsymbol:
-    tickers = Ticker(i)
-    df = tickers.history(period='60d', interval='1h')
-    ##############################
-    # 2. CREATE A CODE HERE THAT EXITS THE LOOP IF LAST ROW OF DF = LAST ROW OF DATABASE
-    ##############################
-    df.to_csv('./database/' + i + '.csv')
-    print("Calculating " + i)
-    strategyCalculator.inform(i,1234)
-
-print("Fetching Data from UK Stocks")
-for i in UKsymbol:
-    tickers = Ticker(i)
-    df = tickers.history(period='60d', interval='1h')
-    ##############################
-    # 3. CREATE A CODE HERE THAT EXITS THE LOOP IF LAST ROW OF DF = LAST ROW OF DATABASE
-    ##############################
-    df.to_csv('./database/' + i + '.csv')
-    print("Calculating " + i)
-    strategyCalculator.inform(i,1234)
-
-print("Fetching Data from ASIA Stocks")
-for i in ASIAsymbol:
-    tickers = Ticker(i)
-    df = tickers.history(period='60d', interval='1h')
-    ##############################
-    # 4. CREATE A CODE HERE THAT EXITS THE LOOP IF LAST ROW OF DF = LAST ROW OF DATABASE
-    ##############################
-    df.to_csv('./database/' + i + '.csv')
-    print("Calculating " + i)
-    strategyCalculator.inform(i,1234)
-
-total = time.time()-start
-print("total time elapsed:")
-print(total)
+    def scrape(self):
+        print("Scraping " + self.tickerName)
+        
+        tickers = Ticker(self.tickerName)
+        df = tickers.history(period='60d', interval='1h')
+        ##############################
+        # 2. TO-DO: CREATE A CODE HERE THAT EXITS THE LOOP IF LAST ROW OF DF = LAST ROW OF DATABASE
+        ##############################
+        
+        df.to_csv('./database/' + self.tickerName + '.csv')
+        
+        self.stratCalc.inform("timeStamp")
+        
+        
+    

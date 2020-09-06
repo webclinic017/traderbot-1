@@ -1,24 +1,18 @@
 import Pyro4
 
-@Pyro4.expose
-class Comparator(object):
-    
-    @Pyro4.oneway
-    def PseudoTrade(self,TickerName,timeStamp,strategy):
-        print("Adding pseudo trade for " + TickerName + " at " + timeStamp + " (" + strategy + ")")
-        ### Save information into a CSV database full of pseudotrades
+class Comparator():
+    def __init__(self, tickerName):
+        self.tickerName = tickerName
+        self.executor = Pyro4.Proxy("PYRONAME:executor")
 
-    @Pyro4.oneway
     def updateWeightage(self, strategy, points):
-        a = 1
+        # TO-DO: Updates strategy weightage file
+        pass
+    
+    def compare(self, results):
+        # TO-DO: Compare results and output final decision
+        finalDecision = 1 # Placeholder
+        if abs(finalDecision) == 1:
+            self.executor.execute(1,1,1,1,1)
         
-
-
-### MAIN CODE EXECUTION
-
-daemon = Pyro4.Daemon()                # make a Pyro daemon
-ns = Pyro4.locateNS()                  # find the name server
-uri = daemon.register(Comparator)   # register the greeting maker as a Pyro object
-ns.register("comparator", uri)
-print("Server Created.")
-daemon.requestLoop()
+        
