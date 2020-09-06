@@ -6,7 +6,11 @@ class StrategyCalculator(object):
     @Pyro4.oneway
     def calculateStrategy(self,name,date):
         print("Calculating Strategy for " + name + "...")
+        ### INSERT CODE HERE
+        
         time.sleep(10)
+
+        ### END INSERT
         print("Calculated Strategy for " + name + "...")
 
 daemon = Pyro4.Daemon()                # make a Pyro daemon
