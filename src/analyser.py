@@ -19,7 +19,6 @@ ns = Pyro4.locateNS()                  # find the name server
 uri = daemon.register(Analyser)   # register the greeting maker as a Pyro object
 ns.register("analyser", uri)
 print("Server Created.")
-
-
-
+Comparator = Pyro4.Proxy("PYRONAME:comparator")
+print("Connected to Analyser.")
 daemon.requestLoop()

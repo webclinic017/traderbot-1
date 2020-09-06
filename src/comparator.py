@@ -9,7 +9,7 @@ class Comparator(object):
         ### Save information into a CSV database full of pseudotrades
 
     @Pyro4.oneway
-    def updateParameters(self, strategy, points):
+    def updateWeightage(self, strategy, points):
         a = 1
         
 
@@ -21,3 +21,4 @@ ns = Pyro4.locateNS()                  # find the name server
 uri = daemon.register(Comparator)   # register the greeting maker as a Pyro object
 ns.register("comparator", uri)
 print("Server Created.")
+daemon.requestLoop()
