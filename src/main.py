@@ -5,6 +5,8 @@ import numpy as np
 from yahooquery import Ticker
 import multiprocessing as mp
 
+## start the nameserver pyro4-ns [options]
+
 from scraper import Scraper
 
 if __name__ == '__main__':

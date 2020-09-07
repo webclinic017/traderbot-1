@@ -27,7 +27,7 @@ class Scraper():
         
         df.to_csv('./database/' + self.tickerName + '.csv')
         
-        self.stratCalc.inform("timeStamp")
+        self.stratCalc.inform("timeStamp",df)
         
         
     

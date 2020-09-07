@@ -1,6 +1,7 @@
 import time
 import indicators.macdRSI as macdRSI
 import indicators.ichimoku200 as ichimoku200
+import indicators.ATR as ATR
 
 from comparator import Comparator
 from analyser import Analyser
@@ -12,18 +13,23 @@ class StrategyCalculator():
         self.analyser = Analyser(self.tickerName, self.comparator)
         self.analyser.inform("timeStamp")
     
-    def inform(self, timeStamp):
+    def inform(self, timeStamp, df):
         print("Calculating Strategy for " + str(self.tickerName) + " at " + str(timeStamp) + "...")
         ### TO-DO: Develop strategies to calculate
-        mrResults = macdRSI.macdRSI()
+        #1. Calculate ATR for potential trade
+
+        atr = ATR.ATR(df)
         
-        ''' if mrResults[0] != 0:
-            self.analyser.PseudoTrade(timeStamp, 0) '''
+
+        mrResults = macdRSI.macdRSI(df)
+        
+        if mrResults != 0:
+            self.analyser.PseudoTrade(timeStamp, 0, mrResults, atr)
             
-        i2Results = ichimoku200.ichimoku200()
+        i2Results = ichimoku200.ichimoku200(df)
         
-        ''' if i2Results[0] != 0:
-            self.analyser.PseudoTrade(timeStamp, 1) '''
+        if i2Results != 0:
+            self.analyser.PseudoTrade(timeStamp, 1, i2Results, atr)
 
         ### END TO-DO
         results = [mrResults, i2Results]
