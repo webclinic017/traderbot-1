@@ -9,10 +9,9 @@ class Comparator():
         # TO-DO: Updates strategy weightage file
         pass
     
-    def compare(self, results):
+    def compare(self, results, atr):
         # TO-DO: Compare results and output final decision
-        finalDecision = 1 # Placeholder
-        if abs(finalDecision) == 1:
-            self.executor.execute(1,1,1,1,1)
+        if(results[0] != 0 or results[1] != 0):
+            self.executor.execute(self.tickerName,results,atr, 1)
         
         

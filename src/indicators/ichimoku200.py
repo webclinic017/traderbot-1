@@ -4,10 +4,9 @@ import pandas as pd
 
 def ichimoku200(df):
     #####PLACEHOLDER
-    df = pd.read_csv('./database/AAPL.csv')
+    # df = pd.read_csv('./database/AAPL.csv')
     #####END_PLACEHOLDER
     df = df.dropna()
-    df = df[::-1]
     ###1. Getting Parameters
 
     ##a. Senkou Span B Ahead
@@ -15,14 +14,14 @@ def ichimoku200(df):
     Currentfifty_two_high = Currentfifty_two['high'].max()
     Currentfifty_two_low = Currentfifty_two['low'].min()
     AheadSenkouB = (Currentfifty_two_high + Currentfifty_two_low) / 2
-    print("SenkouBAhead\n", AheadSenkouB)
+    # print("SenkouBAhead\n", AheadSenkouB)
 
     ##b. Current Kijun-Sen
     Currenttwenty_six = Currentfifty_two.head(26)
     Currenttwenty_six_high = Currenttwenty_six['high'].max()
     Currenttwenty_six_low = Currenttwenty_six['low'].min()
     CurrentKijun = (Currenttwenty_six_high + Currenttwenty_six_low) / 2
-    print("Kijun-Sen\n" , CurrentKijun)
+    # print("Kijun-Sen\n" , CurrentKijun)
 
     ##c. Current Tenkan-Sen
     Currentnine = Currenttwenty_six.head(9)
@@ -30,49 +29,49 @@ def ichimoku200(df):
     Currentnine_low = Currentnine['low'].min()
     CurrentTenkan = (Currentnine_high + Currentnine_low)/2
 
-    print("Tenkan-Sen\n", CurrentTenkan)
+    # print("Tenkan-Sen\n", CurrentTenkan)
 
     ##d. Senkou Span A Ahead
     AheadSenkouA = (CurrentKijun + CurrentTenkan) / 2
-    print("SenkouAAhead\n", AheadSenkouA)
+    # print("SenkouAAhead\n", AheadSenkouA)
 
     ##e. Senkou Span B Current
     Pastfifty_two = df.iloc[26:].head(52)
     Pastfifty_two_high = Pastfifty_two['high'].max()
     Pastfifty_two_low = Pastfifty_two['low'].min()
     CurrentSenkouB = (Pastfifty_two_high + Pastfifty_two_low) / 2
-    print("SenkouBCurrent\n", CurrentSenkouB)
+    # print("SenkouBCurrent\n", CurrentSenkouB)
 
     ##f. Past Kijun-Sen
     Pasttwenty_six = Pastfifty_two.head(26)
     Pasttwenty_six_high = Pasttwenty_six['high'].max()
     Pasttwenty_six_low = Pasttwenty_six['low'].min()
     PastKijun = (Pasttwenty_six_low + Pasttwenty_six_high) / 2
-    print("PastKijun-Sen\n",PastKijun)
+    # print("PastKijun-Sen\n",PastKijun)
 
     ##g. Past Tenkan-Sen
     Pastnine = Pasttwenty_six.head(9)
     Pastnine_high = Pastnine['high'].max()
     Pastnine_low = Pastnine['low'].min()
     PastTenkan = (Pastnine_high + Pastnine_low) / 2
-    print("PastTenkan-Sen\n", PastTenkan)
+    # print("PastTenkan-Sen\n", PastTenkan)
 
     ##h. Senkou Span A Current
     CurrentSenkouA = (PastKijun + PastTenkan) / 2
-    print("SenkouACurrent\n", CurrentSenkouA)
+    # print("SenkouACurrent\n", CurrentSenkouA)
 
     ##i. 200EMA
     emaInput = df.head(200)
     EMAclose = emaInput['close'].values
     ema = EMA(EMAclose, timeperiod=200)
-    print("EMA\n", ema[-1])
+    # print("EMA\n", ema[-1])
 
     ##j. current price action
     priceaction = df.head(1)
     pricehigh = priceaction['high'].values[0]
     pricelow = priceaction['low'].values[0]
-    print("pricehigh\n", pricehigh)
-    print("pricelow\n", pricelow)
+    # print("pricehigh\n", pricehigh)
+    # print("pricelow\n", pricelow)
     
     ### 2. Analysing using Data Provided
     ##tenkan-kijun crossover type

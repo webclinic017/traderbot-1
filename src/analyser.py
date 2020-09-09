@@ -8,10 +8,10 @@ class Analyser():
         # TO-DO: If ticker is currently trading, do intervalAnalysis
         pass
     
-    def PseudoTrade(self, timeStamp, strategy):
-        print("Adding pseudo trade for " + self.tickerName + " at " + timeStamp + " (" + strategy + ")")
+    def PseudoTrade(self, timeStamp, strategy, result, atr):
+        # print("Adding pseudo trade for " + self.tickerName + " at " + timeStamp + " (" + strategy + ")")
         # TO-DO: Create new unique ID (ticker name + counter)
-        
+        pass
         ### TO-DO: Save information into a CSV database full of pseudotrades
 
     def intervalAnalysis(self):

@@ -1,4 +1,8 @@
 import Pyro4
+from datetime import datetime
+import time
+
+
 
 class Executor():
     def __init__(self):
@@ -6,11 +10,14 @@ class Executor():
     
     @Pyro4.expose
     @Pyro4.oneway
-    def execute(self, buySell, amount, stopLoss, takeProfit, leverage):
-        print("lelolulalil")
+    def execute(self, tickerName, buySell, amount, leverage):
         
+        print("(" + datetime.fromtimestamp(time.time()).strftime('%H:%M') + ") " + "Executed " + str(buySell) + " " + tickerName + " for " + str(amount) + " at x" + str(leverage) + " leverage.")
+
 
 ### MAIN CODE EXECUTION
+Pyro4.config.MAX_RETRIES = 200
+Pyro4.config.THREADPOOL_SIZE = 3000
 
 daemon = Pyro4.Daemon()                # make a Pyro daemon
 ns = Pyro4.locateNS()                  # find the name server
