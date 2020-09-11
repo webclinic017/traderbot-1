@@ -52,7 +52,11 @@ class Analyser():
         elif position == 1:
             stopLoss = dfLow - atr
             takeProfit = dfHigh + (1.5*atr)
-
+        ### FOR TESTING    
+        # else:
+        #     stopLoss = 0
+        #     takeProfit = 0
+        #####
         df = pd.read_csv('./database/' + self.tickerName + '/analysis.csv')
 
         df = df.append({'Time Stamp' : dfDate, 'Strategy' : strategy, 'Position' : position, 'Stop Loss' : stopLoss, 'Take Profit' : takeProfit, 'Outcome' : 'Pending', 'Points Gained/Lost' : 0}, ignore_index = True)

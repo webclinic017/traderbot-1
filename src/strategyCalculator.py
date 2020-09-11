@@ -31,10 +31,12 @@ class StrategyCalculator():
         Results = indi.beginCalc(df, self.tickerName, atr)
 
         for i in Results:
-            # if Results[i] != 0:
-                # self.analyser.PseudoTrade(df,i, Results[i], atr)
-            self.analyser.PseudoTrade(df,i, Results[i], atr)
-        
+            if Results[i] != 0:
+                self.analyser.PseudoTrade(df,i, Results[i], atr)
+
+            ### for testing
+            # self.analyser.PseudoTrade(df,i, Results[i], atr)
+            ###
         ### END TO-DO
         # print("Calculated Strategy for " + str(self.tickerName) + " at " + str(timeStamp))
         self.comparator.compare(Results, atr)

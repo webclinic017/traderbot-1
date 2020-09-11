@@ -8,8 +8,12 @@ class Comparator():
 
     def updateWeightage(self, strategy, points):
         df = pd.read_csv('./database/' + self.tickerName + '/IndicatorScore.csv')
+        print("df round 1")
+        print(df)
         df.loc[0,strategy] = df.loc[0,strategy] + points
         df.to_csv('./database/' + self.tickerName + '/IndicatorScore.csv')
+        print("df round 2")
+        print(df)
         pass
     
     def compare(self, results, atr):
