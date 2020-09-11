@@ -2,6 +2,9 @@ import Pyro4
 from datetime import datetime
 import time
 
+## RUN THIS FIRST on command line
+## pyro4-ns [options]
+ ##
 
 
 class Executor():

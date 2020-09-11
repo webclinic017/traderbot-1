@@ -1,7 +1,10 @@
 import time
-import indicators.macdRSI as macdRSI
-import indicators.ichimoku200 as ichimoku200
-import indicators.ATRcalc as atrCalc
+
+import indicators.indicators as ind
+import indicators.ATRcalc as atrcalc
+import os.path as path
+import pandas as pd
+import importlib
 
 from comparator import Comparator
 from analyser import Analyser
@@ -11,30 +14,29 @@ class StrategyCalculator():
         self.tickerName = tickerName
         self.comparator = Comparator(self.tickerName)
         self.analyser = Analyser(self.tickerName, self.comparator)
-        self.analyser.inform("timeStamp")
     
-    def inform(self, timeStamp, df):
+    def inform(self, df):
         # print("Calculating Strategy for " + str(self.tickerName) + " at " + str(timeStamp) + "...")
         ### TO-DO: Develop strategies to calculate
-        #1. Calculate ATR for potential trade
-
-        atr = atrCalc.ATRcalc(df)
-        # print("atr\n", atr)
-
-        mrResults = macdRSI.macdRSI(df)
-        # print("mrResults\n", mrResults)
         
-        if mrResults != 0:
-            self.analyser.PseudoTrade(timeStamp, 0, mrResults, atr)
-            
-        i2Results = ichimoku200.ichimoku200(df)
-        # print("i2Results\n", i2Results)
-        if i2Results != 0:
-            self.analyser.PseudoTrade(timeStamp, 1, i2Results, atr)
+        ##
+        ## Inform Analyser to do the interval Analysis first
+        ## This is before the pseudotrades to ensure no clashes
+        self.analyser.intervalAnalysis(df.head(1))
 
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
+        indi = ind.Indicator()
+        
+        Results = indi.beginCalc(df, self.tickerName, atr)
+
+        for i in Results:
+            # if Results[i] != 0:
+                # self.analyser.PseudoTrade(df,i, Results[i], atr)
+            self.analyser.PseudoTrade(df,i, Results[i], atr)
+        
         ### END TO-DO
-        results = [mrResults, i2Results]
-        print("Calculated Strategy for " + str(self.tickerName) + " at " + str(timeStamp))
-        self.comparator.compare(results, atr)
+        # print("Calculated Strategy for " + str(self.tickerName) + " at " + str(timeStamp))
+        self.comparator.compare(Results, atr)
         
         
