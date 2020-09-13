@@ -18,10 +18,10 @@ if __name__ == '__main__':
     ############################################
 
     # Multiprocessing
-    processes = []
+    # processes = []
     
     print("Fetching Data from Stocks")
-    scraper = Scraper('AAPL')
+    scraper = Scraper('BTC-USD')
     scraper.update()
     # for tickerName in TickerNames:
     #     scraper = Scraper(tickerName[0])

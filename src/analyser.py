@@ -7,7 +7,7 @@ class Analyser():
     
     def intervalAnalysis(self, update):
         # TO-DO: Looks through currently trading file
-        df = pd.read_csv('./database/' + self.tickerName + '/analysis.csv')
+        df = pd.read_csv('./database/' + self.tickerName + '/analysis.csv', index_col= 0)
         for index,row in df.iterrows():
             if row['Outcome'] == 'Pending':
                 if row['Position'] == 1:
@@ -30,7 +30,7 @@ class Analyser():
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
                         self.comparator.updateWeightage(row['Strategy'], 1)
 
-                    elif update['high'].values[0] > row['StopLoss']:
+                    elif update['high'].values[0] > row['Stop Loss']:
                         df.loc[index, 'Outcome'] = 'Fail'
                         df.loc[index, 'Points Gained/Lost'] = -1
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
@@ -57,7 +57,7 @@ class Analyser():
         #     stopLoss = 0
         #     takeProfit = 0
         #####
-        df = pd.read_csv('./database/' + self.tickerName + '/analysis.csv')
+        df = pd.read_csv('./database/' + self.tickerName + '/analysis.csv',index_col=0)
 
         df = df.append({'Time Stamp' : dfDate, 'Strategy' : strategy, 'Position' : position, 'Stop Loss' : stopLoss, 'Take Profit' : takeProfit, 'Outcome' : 'Pending', 'Points Gained/Lost' : 0}, ignore_index = True)
         df.to_csv('./database/' + self.tickerName + '/analysis.csv')

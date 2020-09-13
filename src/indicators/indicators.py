@@ -12,10 +12,6 @@ class Indicator:
         indicatorlist = ['ichimoku200','macdRSI']
 
         # Step 1: Find out if analysis csv exists
-        if not os.path.exists('./database/' + tickerName + '/analysis.csv'):
-            columnNames = ['Time Stamp', 'Strategy', 'Position', 'Stop Loss', 'Take Profit', 'Outcome', 'Points Gained/Lost']
-            frame = pd.DataFrame(columns=columnNames)
-            frame.to_csv('./database/' + tickerName + '/analysis.csv')
         
         if not os.path.exists('./database/' + tickerName + '/IndicatorScore.csv'):
             columnNames = indicatorlist
@@ -23,7 +19,7 @@ class Indicator:
             frame.loc[len(frame)] = 100
             frame.to_csv('./database/' + tickerName + '/IndicatorScore.csv')
         else:
-            columnCheck = pd.read_csv('./database/' + tickerName + '/IndicatorScore.csv')
+            columnCheck = pd.read_csv('./database/' + tickerName + '/IndicatorScore.csv', index_col=0)
             for i in indicatorlist:
                 if not i in columnCheck.columns:
                     avg = columnCheck.mean(axis = 1)
@@ -38,7 +34,6 @@ class Indicator:
             
         return resultsDict
     
-
     def ichimoku200(self,df):
         ## Step 1: 
         #####PLACEHOLDER
@@ -98,16 +93,44 @@ class Indicator:
         CurrentSenkouA = (PastKijun + PastTenkan) / 2
         # print("SenkouACurrent\n", CurrentSenkouA)
 
-        ##i. 200EMA
+
+        ##i. Senkou Span B Past
+        PastPastfifty_two = df.iloc[52:].head(52)
+        PastPastfifty_two_high = PastPastfifty_two['high'].max()
+        PastPastfifty_two_low = PastPastfifty_two['low'].min()
+        PastSenkouB = (PastPastfifty_two_high + PastPastfifty_two_low) / 2
+
+        ##j. Past Past Kijun - Sen
+        PastPasttwenty_six = PastPastfifty_two.head(26)
+        PastPasttwenty_six_high = PastPasttwenty_six['high'].max()
+        PastPasttwenty_six_low = PastPasttwenty_six['low'].min()
+        PastPastKijun = (PastPasttwenty_six_low + PastPasttwenty_six_high) / 2
+
+        ##k. Past Past Tenkan-Sen
+        PastPastnine = PastPasttwenty_six.head(9)
+        PastPastnine_high = PastPastnine['high'].max()
+        PastPastnine_low = PastPastnine['low'].min()
+        PastPastTenkan = (PastPastnine_high + PastPastnine_low) / 2
+
+        ##l. Senkou Span A Past
+        PastSenkouA = (PastPastKijun + PastPastTenkan) / 2
+
+        
+
+
+        ##m. 200EMA
         emaInput = df.head(200)
         EMAclose = emaInput['close'].values
         ema = EMA(EMAclose, timeperiod=200)
         # print("EMA\n", ema[-1])
 
-        ##j. current price action
+        ##n. current price action
         priceaction = df.head(1)
         pricehigh = priceaction['high'].values[0]
         pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+        ### IMPT CHIKOU SPAN = PRICE CLOSE
+
         # print("pricehigh\n", pricehigh)
         # print("pricelow\n", pricelow)
         
@@ -121,14 +144,6 @@ class Indicator:
         elif CurrentTenkan < CurrentKijun: crossover = -1
         else: crossover = 0
 
-        ##current cloud colour
-            ## -1 means red cloud
-            ## 1 means green cloud
-            ## 0 means both
-
-        if CurrentSenkouA > CurrentSenkouB: CurrentCloud = 1
-        elif CurrentSenkouA < CurrentSenkouB: CurrentCloud = -1
-        else: CurrentCloud = 0
 
         ##ahead cloud colour
             ## -1 means red cloud
@@ -149,13 +164,13 @@ class Indicator:
         else: marketEMA = 0
 
         ##market-cloud type
-            ## 1 means low is above current green cloud
-            ## -1 means high is below current red cloud
+            ## 1 means close is above current cloud, and close (lagging span) above the past cloud too
+            ## -1 means close is below current cloud, and close (lagging span) below the past cloud too
             ## 0 means otherwise (absolutely no trading)
 
-        if CurrentCloud >= 0 and pricelow > CurrentSenkouA:
+        if  priceclose > max(CurrentSenkouA,CurrentSenkouB) and priceclose > max(PastSenkouB,PastSenkouA):
             marketCloud = 1
-        elif CurrentCloud <= 0 and pricehigh < CurrentSenkouB:
+        elif priceclose < max(CurrentSenkouB, CurrentSenkouA) and priceclose < max(PastSenkouA, PastSenkouB):
             marketCloud = -1
         else: marketCloud = 0
 
@@ -168,7 +183,6 @@ class Indicator:
         else: position = 0
 
         return position
-
 
     def macdRSI(self,df):
         #####PLACEHOLDER

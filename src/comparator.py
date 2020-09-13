@@ -7,7 +7,7 @@ class Comparator():
         self.executor = Pyro4.Proxy("PYRONAME:executor")
 
     def updateWeightage(self, strategy, points):
-        df = pd.read_csv('./database/' + self.tickerName + '/IndicatorScore.csv')
+        df = pd.read_csv('./database/' + self.tickerName + '/IndicatorScore.csv', index_col=0)
         print("df round 1")
         print(df)
         df.loc[0,strategy] = df.loc[0,strategy] + points
@@ -18,7 +18,7 @@ class Comparator():
     
     def compare(self, results, atr):
         # TO-DO: Compare results and output final decision
-        df = pd.read_csv('./database/' + self.tickerName + '/IndicatorScore.csv')
+        df = pd.read_csv('./database/' + self.tickerName + '/IndicatorScore.csv', index_col=0)
         for i in results:
             df.loc[0,i] = df.loc[0,i] * results[i]
             total = df.sum(axis = 1)

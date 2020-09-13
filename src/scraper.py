@@ -25,22 +25,24 @@ class Scraper():
             
 
     def scrape(self):
-        
+
         tickers = Ticker(self.tickerName)
         df = tickers.history(period='7d', interval='1m')
         df = df.iloc[::-1]
-        ## This saving then re-reading is necessary to prevent the buggy header issues
-        df.to_csv('./database/' + self.tickerName + '/temp.csv')
-        df = pd.read_csv('./database/' + self.tickerName + '/temp.csv')
-        ###########################
-        dfFirstTwoRows = df.head(2)
-        dfSecondRow = dfFirstTwoRows.iloc[1:].head(1)
-        dfDate = dfSecondRow['date'].values[0]
-        print("DfDate = " + str(dfDate))
+        
 
         if os.path.exists('./database/' + self.tickerName):
-            
-            database = pd.read_csv('./database/' + self.tickerName + '/query.csv')
+
+            ## This saving then re-reading is necessary to prevent the buggy header issues
+            df.to_csv('./database/' + self.tickerName + '/temp.csv')
+            df = pd.read_csv('./database/' + self.tickerName + '/temp.csv')
+            ###########################
+            dfFirstTwoRows = df.head(2)
+            dfSecondRow = dfFirstTwoRows.iloc[1:].head(1)
+            dfDate = dfSecondRow['date'].values[0]
+            print("DfDate = " + str(dfDate))
+
+            database = pd.read_csv('./database/' + self.tickerName + '/query.csv', index_col=0)
             databaseFirstTwoRow = database.head(2)
             databaseSecondRow = databaseFirstTwoRow.iloc[1:].head(1)
             dbDate = databaseSecondRow['date'].values[0]
@@ -53,7 +55,12 @@ class Scraper():
         else:
             print("Creating and Updating " + self.tickerName + " at " + datetime.fromtimestamp(time.time()).strftime('%H:%M'))
             os.makedirs('./database/' + self.tickerName + '/')
-            df.to_csv('./database/' + self.tickerName + '/query.csv')        
+            columnNames = ['Time Stamp', 'Strategy', 'Position', 'Stop Loss', 'Take Profit', 'Outcome', 'Points Gained/Lost']
+            frame = pd.DataFrame(columns=columnNames)
+            frame.to_csv('./database/' + self.tickerName + '/analysis.csv')
+            df.to_csv('./database/' + self.tickerName + '/query.csv')
+            df.to_csv('./database/' + self.tickerName + '/temp.csv')
+            df = pd.read_csv('./database/' + self.tickerName + '/temp.csv')        
             self.stratCalc.inform(df.iloc[1:])
 
         
