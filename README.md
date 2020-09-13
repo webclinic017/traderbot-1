@@ -1,8 +1,8 @@
 # TraderBot
-Simple algorithmic trading bot
+Simple algorithmic trading bot!
 
 ## Introduction
-This program attempts to retrieve trading data on user-determined timeframes and intervals, then applies several indicators on the dataset to trade the market. 
+This program attempts to retrieve trading data on user-determined timeframes and intervals, then applies several indicators on the dataset to trade the market.
 
 ## Architectural Overview Diagram
 ![alt text](https://github.com/cwlroda/traderbot/blob/master/img/AOD.png)
@@ -39,6 +39,3 @@ f.	Interface for Analyser: __UpdateWeightage(String StrategyCalculator, Int Weig
 ### 6. Executor
 a.	Performs the execution of the Comparator on the Brokerage Platform\
 b.	Interface for Comparator: __Execute(Int BuySell, Float TP, FloatSL, Int Leverage)__
-
-
-
