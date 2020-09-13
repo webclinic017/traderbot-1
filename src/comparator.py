@@ -10,7 +10,26 @@ class Comparator():
         df = pd.read_csv('./database/' + self.tickerName + '/IndicatorScore.csv', index_col=0)
         print("df round 1")
         print(df)
-        df.loc[0,strategy] = df.loc[0,strategy] + points
+
+        if points < 0:
+            if df.loc[2,strategy] > 0:
+                df.loc[2,strategy] = -1
+                df.loc[1,strategy] = 0
+            else:
+                temp = df.loc[2,strategy]
+                df.loc[2,strategy] = df.loc[2,strategy] + df.loc[1,strategy]
+                df.loc[1,strategy] = temp
+        else:
+            if df.loc[2,strategy] < 0:
+                df.loc[2,strategy] = 1
+                df.loc[1,strategy] = 0
+            else:
+                temp = df.loc[2, strategy]
+                df.loc[2,strategy] = df.loc[2,strategy] + df.loc[1,strategy]
+                df.loc[1,strategy] = temp
+
+
+        df.loc[0,strategy] = df.loc[0,strategy] + df.loc[2,strategy]
         df.to_csv('./database/' + self.tickerName + '/IndicatorScore.csv')
         print("df round 2")
         print(df)

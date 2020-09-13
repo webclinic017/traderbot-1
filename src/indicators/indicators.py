@@ -17,6 +17,8 @@ class Indicator:
             columnNames = indicatorlist
             frame = pd.DataFrame(columns=columnNames)
             frame.loc[len(frame)] = 100
+            frame.loc[len(frame)] = 0
+            frame.loc[len(frame)] = 1
             frame.to_csv('./database/' + tickerName + '/IndicatorScore.csv')
         else:
             columnCheck = pd.read_csv('./database/' + tickerName + '/IndicatorScore.csv', index_col=0)
@@ -177,10 +179,10 @@ class Indicator:
 
 
         if marketCloud == 1 and marketEMA >= 0 and AheadCloud >= 0 and crossover >= 0:
-            position = 1
+            position = 1 ##long
         elif marketCloud == -1 and marketEMA <=0 and AheadCloud <= 0 and crossover <= 0:
-            position = -1
-        else: position = 0
+            position = -1 ##short
+        else: position = 0 ## no position
 
         return position
 
@@ -250,3 +252,5 @@ class Indicator:
         else: position = 0
 
         return position
+
+

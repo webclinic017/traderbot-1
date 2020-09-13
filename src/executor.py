@@ -3,6 +3,7 @@ from datetime import datetime
 import time
 
 ## RUN THIS FIRST on command line
+## for namespace
 ## pyro4-ns [options]
  ##
 
