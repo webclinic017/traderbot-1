@@ -30,7 +30,7 @@ class ibAPI(EClient, EWrapper):
     def isConnected(self):
         return self.isConnected()
 
-    #General fn
+    # General fn
     def Start(self):
         while not self.isConnected():
             print("Connecting to IB Host...")
@@ -39,9 +39,10 @@ class ibAPI(EClient, EWrapper):
         print("Starting IB API Thread...")
         ibAPIthread = threading.Thread(target=self.run, daemon=True)
         ibAPIthread.start()
-        
-    # Market Orders
 
+    '''    
+    Market Orders
+    '''
     def CreateContract(self, security, securityType='STK', exchange='IDEALPRO', currency='USD'):
         contract = Contract()
         contract.symbol = security
@@ -107,6 +108,7 @@ class ibAPI(EClient, EWrapper):
         return order
     
     #! Trailing Stop Limit
+    #? The limit price also moves by offset amount
     def TrailingStopLimitOrder(self, action, quantity, isPercentage:bool, trailingAmount, trailStopPrice, lmtPriceOffset):
         order = Order()
         order.action = action
@@ -122,7 +124,7 @@ class ibAPI(EClient, EWrapper):
 
     # IB does not directly have an order that can set a buy/sell price, stop loss price and take profit price at once
     # so we need to chain 3 orders together
-    # TODO Check that once one of the child orders execute, the other child order cancells automatically
+    # TODO Check that once one of the child orders execute, the other child order cancels automatically
 
     #! Bracket Limit Order with Stop Loss and Take Profit
     def BracketLimitStopLossTakeProfit(self, action, quantity, limitPrice, takeProfitPrice, stopLossPrice):
