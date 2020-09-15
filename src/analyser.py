@@ -5,6 +5,7 @@ class Analyser():
         self.tickerName = tickerName
         self.comparator = comparator
     
+    
     def intervalAnalysis(self, update):
         # TO-DO: Looks through currently trading file
         df = pd.read_csv('./database/' + self.tickerName + '/analysis.csv', index_col= 0)

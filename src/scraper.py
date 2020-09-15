@@ -14,8 +14,10 @@ class Scraper():
         self.stratCalc = StrategyCalculator(self.tickerName)
     
     def update(self):
+        analysisChangePendingToVoid = True
         while True:
-            self.scrape()
+            self.scrape(analysisChangePendingToVoid)
+            analysisChangePendingToVoid = False
             t = datetime.utcnow()
             sleeptime = 60 - (t.second + t.microsecond/1000000.0)
             print(str(sleeptime) + " Seconds to next scrape")
@@ -24,14 +26,21 @@ class Scraper():
 
             
 
-    def scrape(self):
+    def scrape(self, ChangePendingToVoid):
 
         tickers = Ticker(self.tickerName)
         df = tickers.history(period='7d', interval='1m')
         df = df.iloc[::-1]
-        
 
         if os.path.exists('./database/' + self.tickerName):
+            
+            ##Change all previously unfinished analysis rows to 'void' on startup
+            if ChangePendingToVoid == True:
+                analysisRead = pd.read_csv('./database/' + self.tickerName + '/analysis.csv', index_col= 0)
+                for index,row in analysisRead.iterrows():
+                    if row['Outcome'] == 'Pending':
+                        analysisRead.loc[index, 'Outcome'] = 'Void (Prog Closed)'
+                analysisRead.to_csv('./database/' + self.tickerName + '/analysis.csv')
 
             ## This saving then re-reading is necessary to prevent the buggy header issues
             df.to_csv('./database/' + self.tickerName + '/temp.csv')
@@ -63,6 +72,7 @@ class Scraper():
             df = pd.read_csv('./database/' + self.tickerName + '/temp.csv')        
             self.stratCalc.inform(df.iloc[1:])
 
+        pass
         
         
         
