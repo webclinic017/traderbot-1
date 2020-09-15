@@ -1,5 +1,6 @@
 
 from talib import MACDFIX, RSI, EMA
+import indicators.ATRcalc as atrcalc
 import os
 
 import pandas as pd
@@ -7,7 +8,7 @@ class Indicator:
 
     
     # indicatorlist = ['ichimoku200', 'macdRSI']    
-    def beginCalc(self, df, tickerName, atr):
+    def beginCalc(self, df, tickerName):
         ## FILL THIS IN AS MORE INDICATORS ARE ADDED
         indicatorlist = ['ichimoku200','macdRSI']
 
@@ -31,8 +32,9 @@ class Indicator:
 
         for i in indicatorlist:
             fnRun = getattr(self, i)
-            output = fnRun(df)
-            resultsDict[i] = output
+            position, amount, currentclose, stoploss, takeprofit = fnRun(df)
+            indivResult = {"positon":position, "amount":amount, "entry":currentclose, "stoploss":stoploss, "takeprofit":takeprofit}
+            resultsDict[i] = indivResult
             
         return resultsDict
     
@@ -95,7 +97,6 @@ class Indicator:
         CurrentSenkouA = (PastKijun + PastTenkan) / 2
         # print("SenkouACurrent\n", CurrentSenkouA)
 
-
         ##i. Senkou Span B Past
         PastPastfifty_two = df.iloc[52:].head(52)
         PastPastfifty_two_high = PastPastfifty_two['high'].max()
@@ -116,9 +117,6 @@ class Indicator:
 
         ##l. Senkou Span A Past
         PastSenkouA = (PastPastKijun + PastPastTenkan) / 2
-
-        
-
 
         ##m. 200EMA
         emaInput = df.head(200)
@@ -184,9 +182,27 @@ class Indicator:
             position = -1 ##short
         else: position = 0 ## no position
 
-        return position
+        if position == 1:
+            stoploss = 0.95*CurrentKijun
+            amount = priceclose / (priceclose-stoploss)
+            takeprofit = priceclose + 1.45*(priceclose - stoploss)
+
+        elif position == -1:
+            stoploss = 1.05*CurrentKijun
+            amount = priceclose / (stoploss - priceclose)
+            takeprofit = priceclose - 1.45*(stoploss - priceclose)
+        
+        else: 
+            amount = 0
+            stoploss = 0
+            takeprofit = 0
+
+
+        return {position, amount, priceclose, stoploss, takeprofit}
 
     def macdRSI(self,df):
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
         #####PLACEHOLDER
         # df = pd.read_csv('./database/AAPL.csv')
         #####END_PLACEHOLDER
@@ -217,6 +233,7 @@ class Indicator:
         priceaction = df.head(1)
         pricehigh = priceaction['high'].values[0]
         pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
         # print("pricehigh\n", pricehigh)
         # print("pricelow\n", pricelow)
 
@@ -230,6 +247,7 @@ class Indicator:
         if macd[-1] > macdsignal[-1]: crossover = 1
         elif macd[-1] < macdsignal[-1]: crossover = -1
         else: crossover = 0
+
 
         ##market-ema type
         ## 1 means low > 200EMA
@@ -247,10 +265,25 @@ class Indicator:
 
 
         ##OUTPUT
-        if marketEMA == 1 and crossover >= 0: position = 1
-        elif marketEMA == -1 and crossover <=0: position = -1
+        if marketEMA == 1 and crossover >= 0 and rsi < 30 and macd < 0: position = 1
+        elif marketEMA == -1 and crossover <=0 and rsi > 70 and macd > 0: position = -1
         else: position = 0
 
-        return position
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            amount = priceclose / (priceclose - stoploss)
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            amount = priceclose / (stoploss - priceclose)
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+
+
+        return {position, amount, priceclose, stoploss, takeprofit}
 
 
