@@ -18,8 +18,6 @@ class Indicator:
             columnNames = indicatorlist
             frame = pd.DataFrame(columns=columnNames)
             frame.loc[len(frame)] = 100
-            frame.loc[len(frame)] = 0
-            frame.loc[len(frame)] = 1
             frame.to_csv('./database/' + tickerName + '/IndicatorScore.csv')
         else:
             columnCheck = pd.read_csv('./database/' + tickerName + '/IndicatorScore.csv', index_col=0)
@@ -33,7 +31,7 @@ class Indicator:
         for i in indicatorlist:
             fnRun = getattr(self, i)
             position, amount, currentclose, stoploss, takeprofit = fnRun(df)
-            indivResult = {"positon":position, "amount":amount, "entry":currentclose, "stoploss":stoploss, "takeprofit":takeprofit}
+            indivResult = {"position":position, "amount":amount, "entry":currentclose, "stoploss":stoploss, "takeprofit":takeprofit}
             resultsDict[i] = indivResult
             
         return resultsDict
@@ -197,8 +195,9 @@ class Indicator:
             stoploss = 0
             takeprofit = 0
 
-
-        return {position, amount, priceclose, stoploss, takeprofit}
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit]
 
     def macdRSI(self,df):
         #1. Calculate ATR for potential trade
@@ -237,7 +236,6 @@ class Indicator:
         # print("pricehigh\n", pricehigh)
         # print("pricelow\n", pricelow)
 
-
         ###2. Analysing using the data provided
 
         ##macd-signal crossover type
@@ -247,8 +245,6 @@ class Indicator:
         if macd[-1] > macdsignal[-1]: crossover = 1
         elif macd[-1] < macdsignal[-1]: crossover = -1
         else: crossover = 0
-
-
         ##market-ema type
         ## 1 means low > 200EMA
         ## -1 means high < 200EMA
@@ -258,15 +254,12 @@ class Indicator:
         elif pricehigh < ema[-1]: marketEMA = -1
         else: marketEMA = 0
 
-
-
         ##RSI-TYPE
         ##TO-DO
 
-
         ##OUTPUT
-        if marketEMA == 1 and crossover >= 0 and rsi < 30 and macd < 0: position = 1
-        elif marketEMA == -1 and crossover <=0 and rsi > 70 and macd > 0: position = -1
+        if marketEMA == 1 and crossover >= 0 and rsi[-1] < 30 and macd[-1] < 0: position = 1
+        elif marketEMA == -1 and crossover <=0 and rsi[-1] > 70 and macd[-1] > 0: position = -1
         else: position = 0
 
         if position == 1:
@@ -282,8 +275,9 @@ class Indicator:
             takeprofit = 0
             amount = 0
 
+        ##For test
+        # position = 1
 
-
-        return {position, amount, priceclose, stoploss, takeprofit}
+        return [position, amount, priceclose, stoploss, takeprofit]
 
 

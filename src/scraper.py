@@ -20,9 +20,7 @@ class Scraper():
             analysisChangePendingToVoid = False
             t = datetime.utcnow()
             sleeptime = 60 - (t.second + t.microsecond/1000000.0)
-            print(str(sleeptime) + " Seconds to next scrape")
-            time.sleep(sleeptime + 2)
-            print("Starting Next Scrape")
+            time.sleep(sleeptime + 25)
 
             
 
@@ -49,13 +47,11 @@ class Scraper():
             dfFirstTwoRows = df.head(2)
             dfSecondRow = dfFirstTwoRows.iloc[1:].head(1)
             dfDate = dfSecondRow['date'].values[0]
-            print("DfDate = " + str(dfDate))
 
             database = pd.read_csv('./database/' + self.tickerName + '/query.csv', index_col=0)
             databaseFirstTwoRow = database.head(2)
             databaseSecondRow = databaseFirstTwoRow.iloc[1:].head(1)
             dbDate = databaseSecondRow['date'].values[0]
-            print("DbDate = " + dbDate)
 
             if not (dbDate == dfDate):
                 print("Updating " + self.tickerName + " at " + datetime.fromtimestamp(time.time()).strftime('%H:%M'))
