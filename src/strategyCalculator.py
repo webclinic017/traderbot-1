@@ -23,6 +23,7 @@ class StrategyCalculator():
         ## Inform Analyser to do the interval Analysis first
         ## This is before the pseudotrades to ensure no clashes
         self.analyser.intervalAnalysis(df.head(1))
+        self.comparator.intervalAnalysis(df.head(1))
 
         
         indi = ind.Indicator()
@@ -38,6 +39,6 @@ class StrategyCalculator():
             ###
         ### END TO-DO
         # print("Calculated Strategy for " + str(self.tickerName) + " at " + str(timeStamp))
-        self.comparator.compare(Results)
+        self.comparator.compare(Results,df["date"].values[0])
         
         

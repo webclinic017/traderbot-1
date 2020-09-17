@@ -6,7 +6,6 @@ import os
 import pandas as pd
 class Indicator:
 
-    
     # indicatorlist = ['ichimoku200', 'macdRSI']    
     def beginCalc(self, df, tickerName):
         ## FILL THIS IN AS MORE INDICATORS ARE ADDED
@@ -39,7 +38,7 @@ class Indicator:
     def ichimoku200(self,df):
         ## Step 1: 
         #####PLACEHOLDER
-        # df = pd.read_csv('./database/AAPL.csv')
+        # df = pd.read_csv('./database/TSLA/temp2.csv')
         #####END_PLACEHOLDER
         df = df.dropna()
         ###1. Getting Parameters
@@ -131,17 +130,36 @@ class Indicator:
 
         # print("pricehigh\n", pricehigh)
         # print("pricelow\n", pricelow)
-        
+
         ### 2. Analysing using Data Provided
         ##tenkan-kijun crossover type
             ## -1 means negative crossover
             ## 1 means positive crossover
             ## 0 means both
 
-        if CurrentTenkan > CurrentKijun: crossover = 1
-        elif CurrentTenkan < CurrentKijun: crossover = -1
-        else: crossover = 0
+        delayOnePeriod = df.iloc[1:]
 
+        ##b. Current Kijun-Sen
+        Delaytwenty_six = delayOnePeriod.head(26)
+        Delaytwenty_six_high = Delaytwenty_six['high'].max()
+        Delaytwenty_six_low = Delaytwenty_six['low'].min()
+        DelayKijun = (Delaytwenty_six_high + Delaytwenty_six_low) / 2
+        # print("Delay Kijun-Sen\n" , DelayKijun)
+
+        ##c. Current Tenkan-Sen
+        Delaynine = Delaytwenty_six.head(9)
+        Delaynine_high = Delaynine['high'].max()
+        Delaynine_low = Delaynine['low'].min()
+        DelayTenkan = (Delaynine_high + Delaynine_low)/2
+
+        # print("Tenkan-Sen\n", DelayTenkan)
+
+        if DelayTenkan <= DelayKijun and CurrentTenkan >= CurrentKijun and pricelow > CurrentTenkan:
+            crossover = 1
+        elif DelayTenkan >= DelayKijun and CurrentTenkan <= CurrentKijun and pricehigh < CurrentTenkan:
+            crossover = -1
+
+        else: crossover = 0
 
         ##ahead cloud colour
             ## -1 means red cloud
@@ -166,30 +184,34 @@ class Indicator:
             ## -1 means close is below current cloud, and close (lagging span) below the past cloud too
             ## 0 means otherwise (absolutely no trading)
 
-        if  priceclose > max(CurrentSenkouA,CurrentSenkouB) and priceclose > max(PastSenkouB,PastSenkouA):
+        if  pricelow > max(CurrentSenkouA,CurrentSenkouB) and pricelow > max(PastSenkouB,PastSenkouA):
             marketCloud = 1
-        elif priceclose < max(CurrentSenkouB, CurrentSenkouA) and priceclose < max(PastSenkouA, PastSenkouB):
+        elif pricehigh < min(CurrentSenkouB, CurrentSenkouA) and pricehigh < min(PastSenkouA, PastSenkouB):
             marketCloud = -1
         else: marketCloud = 0
 
 
 
-        if marketCloud == 1 and marketEMA >= 0 and AheadCloud >= 0 and crossover >= 0:
+        if marketCloud == 1 and marketEMA > 0 and AheadCloud >= 0 and crossover > 0:
             position = 1 ##long
-        elif marketCloud == -1 and marketEMA <=0 and AheadCloud <= 0 and crossover <= 0:
+        elif marketCloud == -1 and marketEMA < 0 and AheadCloud <= 0 and crossover < 0:
             position = -1 ##short
         else: position = 0 ## no position
 
         if position == 1:
-            stoploss = 0.95*CurrentKijun
+            closeKijunDistance = priceclose - CurrentKijun
+            adjustedDistance = 1.05 * closeKijunDistance
+            stoploss = priceclose - adjustedDistance
             amount = priceclose / (priceclose-stoploss)
             takeprofit = priceclose + 1.45*(priceclose - stoploss)
 
         elif position == -1:
-            stoploss = 1.05*CurrentKijun
+            closeKijunDistance = CurrentKijun - priceclose
+            adjustedDistance = 1.05 * closeKijunDistance
+            stoploss = priceclose + adjustedDistance
             amount = priceclose / (stoploss - priceclose)
             takeprofit = priceclose - 1.45*(stoploss - priceclose)
-        
+
         else: 
             amount = 0
             stoploss = 0
