@@ -89,12 +89,12 @@ class Comparator():
                         newPriceDifference = 1.5 * oldPriceDifference
                         df.loc[index, 'Stop Loss'] = row['Target']
                         df.loc[index, 'Target'] = row['Entry'] + newPriceDifference
-                        df.loc[index, 'Profits'] = (update['close'].values[0] - df.loc[index, 'Entry']) * df.loc[index, 'Amount']
+                        df.loc[index, 'Profits'] = (update['close'].values[0] - df.loc[index, 'Entry']) / df.loc[index,'Entry'] * df.loc[index, 'Amount'] * df.loc[index, 'Leverage']
                         df.to_csv('./database/' + self.tickerName + '/trades.csv')
 
                     elif update['low'].values[0] < row['Stop Loss']:
                         df.loc[index, 'Outcome'] = 'Closed'
-                        df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index,'Entry']) * df.loc[index,'Amount']
+                        df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index,'Entry']) / df.loc[index,'Entry'] * df.loc[index,'Amount'] * df.loc[index, 'Leverage']
                         df.to_csv('./database/' + self.tickerName + '/trades.csv')
 
                 elif row['Position'] == -1:
@@ -103,12 +103,12 @@ class Comparator():
                         newPriceDifference = 1.5 * oldPriceDifference
                         df.loc[index, 'Stop Loss'] = row['Target']
                         df.loc[index, 'Target'] = row['Entry'] - newPriceDifference
-                        df.loc[index, 'Profits'] = (update['close'].values[0] - df.loc[index,'Entry']) * (-1) * df.loc[index,'Amount'] * df.loc[index, 'Leverage']
+                        df.loc[index, 'Profits'] = (update['close'].values[0] - df.loc[index,'Entry']) / df.loc[index,'Entry'] * (-1) * df.loc[index,'Amount'] * df.loc[index, 'Leverage']
                         df.to_csv('./database/' + self.tickerName + '/trades.csv')
 
                     elif update['high'].values[0] > row['Stop Loss']:
                         df.loc[index, 'Outcome'] = 'Closed'
-                        df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index, 'Entry']) * (-1) * df.loc[index, 'Amount'] * df.loc[index, 'Leverage']
+                        df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index, 'Entry']) / df.loc[index,'Entry'] * (-1) * df.loc[index, 'Amount'] * df.loc[index, 'Leverage']
                         df.to_csv('./database/' + self.tickerName + '/trades.csv')
 
         # TO-DO: If ticker is currently trading, do intervalAnalysis

@@ -243,6 +243,11 @@ class Indicator:
         # print("MACD\n", macd[-1])
         # print("Signal\n", macdsignal[-1])
 
+        ##c. DelayedMACD
+        delayedmacdInput = df.iloc[:1].head(34)
+        delayedMACDclose = delayedmacdInput['close'].values
+        delayedmacd, delayedmacdsignal, delayedmacdhist = MACDFIX(delayedMACDclose, signalperiod = 9)
+
         ##c. 200EMA
         emaInput = df.head(200)
         EMAclose = emaInput['close'].values
@@ -264,8 +269,8 @@ class Indicator:
         ## -1 means negative crossover
         ## 1 means positive crossover
         ## 0 means both
-        if macd[-1] > macdsignal[-1]: crossover = 1
-        elif macd[-1] < macdsignal[-1]: crossover = -1
+        if delayedmacd[-1] < delayedmacdsignal[-1] and macd[-1] > macdsignal[-1]: crossover = 1
+        elif delayedmacd[-1] > delayedmacdsignal[-1] and macd[-1] < macdsignal[-1]: crossover = -1
         else: crossover = 0
         ##market-ema type
         ## 1 means low > 200EMA
@@ -276,12 +281,9 @@ class Indicator:
         elif pricehigh < ema[-1]: marketEMA = -1
         else: marketEMA = 0
 
-        ##RSI-TYPE
-        ##TO-DO
-
         ##OUTPUT
-        if marketEMA == 1 and crossover >= 0 and rsi[-1] < 30 and macd[-1] < 0: position = 1
-        elif marketEMA == -1 and crossover <=0 and rsi[-1] > 70 and macd[-1] > 0: position = -1
+        if marketEMA == 1 and crossover > 0 and rsi[-1] <= 50 and macd[-1] < 0: position = 1
+        elif marketEMA == -1 and crossover < 0 and rsi[-1] >= 50 and macd[-1] > 0: position = -1
         else: position = 0
 
         if position == 1:
