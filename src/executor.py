@@ -14,9 +14,9 @@ class Executor():
     
     @Pyro4.expose
     @Pyro4.oneway
-    def execute(self, tickerName, buySell, amount, leverage):
+    def execute(self, tickerName, buySell, amount, stopLoss, takeProfit, leverage):
         
-        print("(" + datetime.fromtimestamp(time.time()).strftime('%H:%M') + ") " + "Executed " + str(buySell) + " " + tickerName + " for " + str(amount) + " at x" + str(leverage) + " leverage.")
+        print("(" + datetime.fromtimestamp(time.time()).strftime('%H:%M') + ") " + "Executed " + str(buySell) + " " + tickerName + " for $" + str(amount) + " at x" + str(leverage) + " leverage. Stop Loss = " + str(stopLoss) + ", Take Profit = " + str(takeProfit) + ".")
 
 
 ### MAIN CODE EXECUTION

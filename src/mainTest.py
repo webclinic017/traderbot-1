@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # processes = []
     
     print("Fetching Data from Stocks")
-    scraper = Scraper('BTC-USD')
+    scraper = Scraper('RR.L')
     scraper.update()
     # for tickerName in TickerNames:
     #     scraper = Scraper(tickerName[0])
