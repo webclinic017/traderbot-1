@@ -46,3 +46,8 @@ b.	Interface for Comparator: __Execute(Int BuySell, Float TP, FloatSL, Int Lever
 3. Start a Name Server using pyro4-ns
 4. Run executor.py to start a executor server
 5. Run main.py or mainTest.py
+
+## How to Use IBAPI with Virtualenv
+1. Download Python Native API from here http://interactivebrokers.github.io/
+2. Go into the directory – /TWS API/source/pythonclient. In this folder, run the python3 setup.py install file to install the API as a package.
+3. By running that in the virtualenv, the ibapi can be used within the virtualenv
