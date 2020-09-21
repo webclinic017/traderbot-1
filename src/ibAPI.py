@@ -6,6 +6,7 @@ from ibapi.order import *
 
 import threading
 import time
+import logging
 
 # TODO 
 # Make a base class of ibAPI with the generic function names in case we 
@@ -31,10 +32,21 @@ class ibAPI(EClient, EWrapper):
     def connectPlatform(self):
         self.connect('127.0.0.1', 7497, 123) # Change port no to match port no in IB settings
 
-    def nextValidId(self, orderId: int):
-        self.nextorderId = orderId
+    def connectionClosed(self): # called by TWS after self.disconnect()
+        print("Connection Closed")
+
+    def nextValidId(self, orderId: int): # called by TWS on startup and self.reqIDs(no)
+        self.nextorderId = orderId # This is automatically done on connection
         print('The next valid order id is: ', self.nextorderId)
     
+    # Use this to increment orderIDs on our end, so request to TWS for order IDs dont need to be made.
+    def obtainNextValidOrderIDs(self, number=1):
+        nextID = self.nextorderId
+        self.nextorderId += number
+        return nextID
+
+
+
     # General fn
     def Start(self):
         while not self.isConnected():
@@ -157,10 +169,15 @@ class ibAPI(EClient, EWrapper):
 
     #! Bracket Limit Order with Stop Loss and Take Profit
     def BracketLimitStopLossTakeProfit(self, action, quantity, limitPrice, takeProfitPrice, stopLossPrice):
+
         oppAction = "BUY" if action == "SELL" else "SELL"
+
+        # reserve the next 3 order IDs
+        nextID = self.obtainNextValidOrderIDs(3)
+
         # Create Limit Order
         ParentOrder = self.LimitOrder(action=action, quantity=quantity, limitPrice=limitPrice)
-        ParentOrder.orderId = self.nextorderId
+        ParentOrder.orderId = nextID
         ParentOrder.transmit = False
 
         # Create Take Profit (Limit Order)
@@ -180,7 +197,9 @@ class ibAPI(EClient, EWrapper):
 
     #! Custom Bracket Order
     def CustomBracketOrder(self, Parent, Child1, Child2):
-        Parent.orderID = self.nextorderId
+        # reserve the next 3 order IDs
+        nextID = self.obtainNextValidOrderIDs(3)
+        Parent.orderID = nextID
         Parent.transmit = False
         Child1.orderID = Parent.orderID + 1
         Child1.transmit = False
@@ -197,19 +216,23 @@ class ibAPI(EClient, EWrapper):
         for o in bracket:
             print("place order")
             self.placeOrder(o.orderId, self.Stock_contract(tickerName), o)
-        time.sleep(3)
+        # time.sleep(3)
         print('Finished buy order')
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     app = ibAPI()
     app.Start()
 
+    app.reqIds(1)
     #Place orders
-    app.buyOrder("BTC", 100, 200, 210, 190)
+    # app.buyOrder("AAPL", 100, 200, 210, 190)
 
     #Cancel order 
-    print('cancelling order')
-    app.cancelOrder(app.nextorderId)
+    # print('cancelling order')
+    # app.cancelOrder(app.nextorderId)
     time.sleep(3)
 
     app.disconnect()
+
+    time.sleep(3)
