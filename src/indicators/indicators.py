@@ -1,15 +1,15 @@
 
-from talib import MACDFIX, RSI, EMA
+from talib import MACDFIX, RSI, EMA, SAR, SMA, TRIX
 import indicators.ATRcalc as atrcalc
 import os
 
 import pandas as pd
 class Indicator:
 
-    # indicatorlist = ['ichimoku200', 'macdRSI']    
+    # indicatorlist = ['ichimoku200', 'macdRSI', 'parabolic200', 'SMA200']    
     def beginCalc(self, df, tickerName):
         ## FILL THIS IN AS MORE INDICATORS ARE ADDED
-        indicatorlist = ['ichimoku200','macdRSI']
+        indicatorlist = ['ichimoku200','macdRSI', 'macd200', 'parabolic200', 'SMA200', 'trix200']
 
         # Step 1: Find out if analysis csv exists
         
@@ -248,6 +248,212 @@ class Indicator:
         delayedMACDclose = delayedmacdInput['close'].values
         delayedmacd, delayedmacdsignal, delayedmacdhist = MACDFIX(delayedMACDclose, signalperiod = 9)
 
+
+        ##d. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+        # print("pricehigh\n", pricehigh)
+        # print("pricelow\n", pricelow)
+
+        ###2. Analysing using the data provided
+
+        ##macd-signal crossover type
+        ## -1 means negative crossover
+        ## 1 means positive crossover
+        ## 0 means both
+        if delayedmacd[-1] < delayedmacdsignal[-1] and macd[-1] > macdsignal[-1]: crossover = 1
+        elif delayedmacd[-1] > delayedmacdsignal[-1] and macd[-1] < macdsignal[-1]: crossover = -1
+        else: crossover = 0
+
+        ##OUTPUT
+        if crossover > 0 and rsi[-1] <= 50 and macd[-1] < 0: position = 1
+        elif crossover < 0 and rsi[-1] >= 50 and macd[-1] > 0: position = -1
+        else: position = 0
+
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            amount = priceclose / (priceclose - stoploss)
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            amount = priceclose / (stoploss - priceclose)
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        ##For test
+        # position = 1
+
+        return [position, amount, priceclose, stoploss, takeprofit]
+
+    def parabolic200(self,df):
+        df = df.dropna()
+
+        ###1. Getting Parameters
+        ##a. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+        ##b. SAR current
+
+        sarCurrentInput = df.head(2)
+        sarCurrentInputHigh = sarCurrentInput['high'].values
+        sarCurrentInputLow = sarCurrentInput['low'].values
+        sarCurrent = SAR(sarCurrentInputHigh, sarCurrentInputLow, acceleration = 0, maximum = 0)
+
+        ##c. previous price action
+        prevaction = df.iloc[1:].head(1)
+        prevhigh = prevaction['high'].values[0]
+        prevlow = prevaction['low'].values[0]
+        prevclose = prevaction['close'].values[0]
+
+        ##d. previous SAR
+        sarPreviousInput = df.iloc[1:].head(2)
+        sarPreviousInputHigh = sarPreviousInput['high'].values
+        sarPreviousInputLow = sarPreviousInput['low'].values
+        sarPrevious = SAR(sarPreviousInputHigh, sarPreviousInputLow, acceleration = 0, maximum = 0)
+
+        ##b. 200EMA
+        emaInput = df.head(200)
+        EMAclose = emaInput['close'].values
+        ema = EMA(EMAclose, timeperiod=200)
+
+        ## SAR reversal
+        ## 1 if from -ve become +ve
+        ## -1 if from +ve become -ve
+        ## 0 otherwise
+
+        if prevclose < sarPrevious[-1] and priceclose > sarCurrent[-1]:
+            change = 1
+        elif prevclose > sarPrevious[-1] and priceclose < sarCurrent[-1]:
+            change = -1
+        else: change = 0
+
+        ## 200EMA filtering false signal
+        if pricelow > ema[-1]: marketEMA = 1
+        elif pricehigh < ema[-1]: marketEMA = -1
+        else: marketEMA = 0
+
+        ##OUTPUT
+        if marketEMA == 1 and change == 1 : position = 1
+        elif marketEMA == -1 and change == -1: position = -1
+        else: position = 0
+
+        if position == 1:
+            stoploss = sarCurrent[-1]
+            takeprofit = priceclose + 1.45*(priceclose - sarCurrent[-1])
+            amount = priceclose / (priceclose - stoploss)
+        elif position == -1:
+            stoploss = sarCurrent[-1]
+            takeprofit = priceclose - 1.45 * (sarCurrent[-1] - priceclose)
+            amount = priceclose / (stoploss - priceclose)
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        ##For test
+        # position = 1
+
+        return [position, amount, priceclose, stoploss, takeprofit]
+
+    def SMA200(self,df):
+        df = df.dropna()
+
+        ###1. Getting Parameters
+        ##a. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+
+        ##b. previous price action
+        prevaction = df.iloc[1:].head(1)
+        prevhigh = prevaction['high'].values[0]
+        prevlow = prevaction['low'].values[0]
+        prevclose = prevaction['close'].values[0]
+
+        ##d. current SMAs
+        smaCurrentInput = df.head(20)
+        sma20Current = SMA(smaCurrentInput['close'].values, timeperiod=20)
+        smaCurrentInput = smaCurrentInput.head(10)
+        sma10Current = SMA(smaCurrentInput['close'].values, timeperiod=10)
+
+        ##e. previous SMAs
+        smaPreviousInput = df.iloc[1:].head(20)
+        sma20Previous = SMA(smaPreviousInput['close'].values, timeperiod=20)
+        smaPreviousInput = smaPreviousInput.head(10)
+        sma10Previous = SMA(smaPreviousInput['close'].values,timeperiod=10)
+
+        ##f. 200EMA
+        emaInput = df.head(200)
+        EMAclose = emaInput['close'].values
+        ema = EMA(EMAclose, timeperiod=200)
+
+        ##trade conditions
+
+        if sma10Previous[-1] < sma20Previous[-1] and sma10Current[-1] > sma20Current[-1]:
+            crossover = 1
+        elif sma10Previous[-1] > sma20Previous[-1] and sma10Current[-1] < sma20Current[-1]:
+            crossover = -1
+        else: crossover = 0
+
+        ## 200EMA filtering false signal
+        if pricelow > ema[-1]: marketEMA = 1
+        elif pricehigh < ema[-1]: marketEMA = -1
+        else: marketEMA = 0
+
+        if crossover == 1 and marketEMA == 1:
+            position = 1
+        elif crossover == -1 and marketEMA == -1:
+            position = -1
+        else: position = 0
+
+        atr = atrcalc.ATRcalc(df)
+
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            amount = priceclose / (priceclose - stoploss)
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            amount = priceclose / (stoploss - priceclose)
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        return [position, amount, priceclose, stoploss, takeprofit]
+
+    def macd200(self,df):
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
+        #####PLACEHOLDER
+        # df = pd.read_csv('./database/AAPL.csv')
+        #####END_PLACEHOLDER
+        df = df.dropna()
+
+        ###1. Getting Parameters
+        
+
+        ##b. MACD
+        macdInput = df.head(34)
+        MACDclose = macdInput['close'].values
+        macd, macdsignal, macdhist = MACDFIX(MACDclose, signalperiod = 9)
+        # print("MACD\n", macd[-1])
+        # print("Signal\n", macdsignal[-1])
+
+        ##c. DelayedMACD
+        delayedmacdInput = df.iloc[:1].head(34)
+        delayedMACDclose = delayedmacdInput['close'].values
+        delayedmacd, delayedmacdsignal, delayedmacdhist = MACDFIX(delayedMACDclose, signalperiod = 9)
+
         ##c. 200EMA
         emaInput = df.head(200)
         EMAclose = emaInput['close'].values
@@ -282,8 +488,8 @@ class Indicator:
         else: marketEMA = 0
 
         ##OUTPUT
-        if marketEMA == 1 and crossover > 0 and rsi[-1] <= 50 and macd[-1] < 0: position = 1
-        elif marketEMA == -1 and crossover < 0 and rsi[-1] >= 50 and macd[-1] > 0: position = -1
+        if marketEMA == 1 and crossover > 0  and macd[-1] < 0: position = 1
+        elif marketEMA == -1 and crossover < 0  and macd[-1] > 0: position = -1
         else: position = 0
 
         if position == 1:
@@ -304,4 +510,59 @@ class Indicator:
 
         return [position, amount, priceclose, stoploss, takeprofit]
 
+    def trix200(self,df):
+        df = df.dropna()
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
+
+        df = df.head(60)
+        trixOutput = TRIX(df['close'].values, timeperiod = 20)
+
+        ##c. 200EMA
+        emaInput = df.head(200)
+        EMAclose = emaInput['close'].values
+        ema = EMA(EMAclose, timeperiod=200)
+
+        # print("EMA\n", ema[-1])
+
+        ##d. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+        # print("pricehigh\n", pricehigh)
+        # print("pricelow\n", pricelow)
+
+        if trixOutput[-2] < 0 and trixOutput[-1] > 0:
+            crossover = 1
+        elif trixOutput[-2] > 0 and trixOutput[-1] < 0:
+            crossover = -1
+        else: crossover = 0
+
+
+        if pricelow > ema[-1]: marketEMA = 1
+        elif pricehigh < ema[-1]: marketEMA = -1
+        else: marketEMA = 0
+
+        ##OUTPUT
+        if marketEMA == 1 and crossover > 0: position = 1
+        elif marketEMA == -1 and crossover < 0: position = -1
+        else: position = 0
+
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            amount = priceclose / (priceclose - stoploss)
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            amount = priceclose / (stoploss - priceclose)
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        ##For test
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit]
 

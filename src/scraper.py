@@ -6,6 +6,7 @@ import numpy as np
 import os
 from yahooquery import Ticker
 from strategyCalculator import StrategyCalculator
+from progressReport import progressReport as pr
 
 
 class Scraper():
@@ -15,19 +16,25 @@ class Scraper():
     
     def update(self):
         analysisChangePendingToVoid = True
+        repeat = 0
         while True:
+            repeat = repeat + 1
             self.scrape(analysisChangePendingToVoid)
+            if repeat == 24:
+                repeat = 0
+                pr()
+
             analysisChangePendingToVoid = False
             t = datetime.utcnow()
-            sleeptime = 60 - (t.second + t.microsecond/1000000.0)
-            time.sleep(sleeptime + 25)
+            sleeptime = 300 - (t.second + t.microsecond/1000000.0)
+            time.sleep(sleeptime + 60)
 
             
 
     def scrape(self, ChangePendingToVoid):
 
         tickers = Ticker(self.tickerName)
-        df = tickers.history(period='7d', interval='1m')
+        df = tickers.history(period='7d', interval='5m')
         df = df.iloc[::-1]
 
         if os.path.exists('./database/' + self.tickerName):

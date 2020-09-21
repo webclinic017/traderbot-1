@@ -12,24 +12,23 @@ from scraper import Scraper
 if __name__ == '__main__':
     #############################################
     # 1. TO-DO: REPLACE THIS STATIC tickerName LIST WITH ONE THAT READS A CSV FILE FOR THE tickerNameS
-    TickerNames = pd.read_csv('./src/tickerNames/TickerNames.csv')
+    TickerNames = ['ETH-USD', 'BTC-USD', 'XRP-USD', 'BCH-USD', 'LTC-USD', 'EOS-USD']
     
-    TickerNames = TickerNames.values
+    # TickerNames = TickerNames.values
     ############################################
 
     # Multiprocessing
-    # processes = []
+    processes = []
     
     print("Fetching Data from Stocks")
-    scraper = Scraper('ETH-USD')
-    scraper.update()
-    # for tickerName in TickerNames:
-    #     scraper = Scraper(tickerName[0])
-    #     process = mp.Process(target=scraper.update, args=())
-    #     process.start()
-    #     processes.append(process)
+    
+    for tickerName in TickerNames:
+        scraper = Scraper(tickerName)
+        process = mp.Process(target=scraper.update, args=())
+        process.start()
+        processes.append(process)
         
-    # for process in processes:
-    #     process.join()
+    for process in processes:
+        process.join()
         
     
