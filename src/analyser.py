@@ -15,14 +15,14 @@ class Analyser():
                     if update['high'].values[0] > row['Take Profit']:
                         df.loc[index, 'Outcome'] = 'Success'
                         df.loc[index, 'Points Gained/Lost'] = 1
-                        df.loc[index, 'Profits'] = (df.loc[index,'Take Profit'] - df.loc[index, 'Entry']) * df.loc[index, 'Amount']
+                        df.loc[index, 'Profits'] = (df.loc[index,'Take Profit'] - df.loc[index, 'Entry']) / df.loc[index, 'Entry'] * df.loc[index, 'Amount']
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
                         self.comparator.updateWeightage(row['Strategy'], 1)
 
                     elif update['low'].values[0] < row['Stop Loss']:
                         df.loc[index, 'Outcome'] = 'Fail'
                         df.loc[index, 'Points Gained/Lost'] = -1
-                        df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index,'Entry']) * df.loc[index,'Amount']
+                        df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index,'Entry']) / df.loc[index, 'Entry'] * df.loc[index,'Amount']
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
                         self.comparator.updateWeightage(row['Strategy'], -1)
 
@@ -30,14 +30,14 @@ class Analyser():
                     if update['low'].values[0] < row['Take Profit']:
                         df.loc[index, 'Outcome'] = 'Success'
                         df.loc[index, 'Points Gained/Lost'] = 1
-                        df.loc[index, 'Profits'] = (df.loc[index,'Take Profit'] - df.loc[index,'Entry']) * (-1) * df.loc[index,'Amount']
+                        df.loc[index, 'Profits'] = (df.loc[index,'Take Profit'] - df.loc[index,'Entry']) / df.loc[index, 'Entry'] * (-1) * df.loc[index,'Amount']
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
                         self.comparator.updateWeightage(row['Strategy'], 1)
 
                     elif update['high'].values[0] > row['Stop Loss']:
                         df.loc[index, 'Outcome'] = 'Fail'
                         df.loc[index, 'Points Gained/Lost'] = -1
-                        df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index, 'Entry']) * (-1) * df.loc[index, 'Amount']
+                        df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index, 'Entry']) / df.loc[index, 'Entry'] * (-1) * df.loc[index, 'Amount']
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
                         self.comparator.updateWeightage(row['Strategy'], -1)
 
