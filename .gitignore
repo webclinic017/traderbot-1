@@ -4,3 +4,4 @@ env/
 *.csv
 reports/AnalysisReport.csv
 *.csv
+*.csv
