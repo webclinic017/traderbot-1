@@ -15,19 +15,20 @@ class Executor():
     
     @Pyro4.expose
     @Pyro4.oneway
-    def execute(self, tickerName, buySell, amount, stopLoss, takeProfit, leverage):
-        app = ibAPI()
-        app.Start()
-        #Place orders
-        print('making order')
-        app.buyOrder(tickerName, buySell, amount, stopLoss, takeProfit)
+    def execute(self, tickerName, buySell, quantity, limitPrice, stopLoss, takeProfit, leverage):
+        # app = ibAPI()
+        # app.Start()
+        # app.reqIds(1)
+        # #Place orders
+        # print('making order')
+        # app.buyOrder(tickerName, buySell, quantity, limitPrice, stopLoss, takeProfit)
         #Cancel order 
         # print('cancelling order')
         # app.cancelOrder(app.nextorderId)
-        time.sleep(3)
+        # time.sleep(3)
 
-        app.disconnect()
-        print("(" + datetime.fromtimestamp(time.time()).strftime('%H:%M') + ") " + "Executed " + str(buySell) + " " + tickerName + " for $" + str(amount) + " at x" + str(leverage) + " leverage. Stop Loss = " + str(stopLoss) + ", Take Profit = " + str(takeProfit) + ".")
+        # app.disconnect()
+        print("(" + datetime.fromtimestamp(time.time()).strftime('%H:%M') + ") " + "Executed " + str(buySell) + " " + tickerName + " for $" + str(quantity) + " at x" + str(leverage) + " leverage. Stop Loss = " + str(stopLoss) + ", Take Profit = " + str(takeProfit) + ".")
 
 
 ### MAIN CODE EXECUTION

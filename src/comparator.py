@@ -9,26 +9,27 @@ class Comparator():
     def updateWeightage(self, strategy, points):
         df = pd.read_csv('./database/' + self.tickerName + '/IndicatorScore.csv', index_col=0)
 
-        if points < 0:
-            df.loc[0, strategy] = 0.9 * df.loc[0, strategy]
-            # fibonacci increment strategy
-            # if df.loc[2,strategy] > 0:
-            #     df.loc[2,strategy] = -1
-            #     df.loc[1,strategy] = 0
-            # else:
-            #     temp = df.loc[2,strategy]
-            #     df.loc[2,strategy] = df.loc[2,strategy] + df.loc[1,strategy]
-            #     df.loc[1,strategy] = temp
-        else:
-            df.loc[0, strategy] = 1.1 * df.loc[0,strategy]
-            # fibonacci decrement strategy
-            # if df.loc[2,strategy] < 0:
-            #     df.loc[2,strategy] = 1
-            #     df.loc[1,strategy] = 0
-            # else:
-            #     temp = df.loc[2, strategy]
-            #     df.loc[2,strategy] = df.loc[2,strategy] + df.loc[1,strategy]
-            #     df.loc[1,strategy] = temp
+        df.loc[0, strategy] = (1+(0.1*points)) * df.loc[0,strategy]
+        # if points < 0:
+        #     df.loc[0, strategy] = 0.9 * df.loc[0, strategy]
+        #     # fibonacci increment strategy
+        #     # if df.loc[2,strategy] > 0:
+        #     #     df.loc[2,strategy] = -1
+        #     #     df.loc[1,strategy] = 0
+        #     # else:
+        #     #     temp = df.loc[2,strategy]
+        #     #     df.loc[2,strategy] = df.loc[2,strategy] + df.loc[1,strategy]
+        #     #     df.loc[1,strategy] = temp
+        # else:
+        #     df.loc[0, strategy] = 1.1 * df.loc[0,strategy]
+        #     # fibonacci decrement strategy
+        #     # if df.loc[2,strategy] < 0:
+        #     #     df.loc[2,strategy] = 1
+        #     #     df.loc[1,strategy] = 0
+        #     # else:
+        #     #     temp = df.loc[2, strategy]
+        #     #     df.loc[2,strategy] = df.loc[2,strategy] + df.loc[1,strategy]
+        #     #     df.loc[1,strategy] = temp
 
         # fibonacci strategy
         # df.loc[0,strategy] = df.loc[0,strategy] + df.loc[2,strategy]
@@ -44,20 +45,20 @@ class Comparator():
 
         for i in results:
             if init == False:
-                highest = df.loc[0,i] * (results[i])["position"]
-                lowest = df.loc[0,i] * (results[i])["position"]
+                highest = df.loc[0,i] * (results[i])["position"] * (results[i])["confidence"]
+                lowest = df.loc[0,i] * (results[i])["position"] * (results[i])["confidence"]
                 highestIndicator = i
                 lowestIndicator = i
                 init = True
             else:
-                if df.loc[0,i] * (results[i])["position"] > highest:
-                    highest = df.loc[0,i] * (results[i])["position"]
+                if df.loc[0,i] * (results[i])["position"] * (results[i])["confidence"] > highest:
+                    highest = df.loc[0,i] * (results[i])["position"] * (results[i])["confidence"]
                     highestIndicator = i
-                if df.loc[0,i] * (results[i])["position"] < lowest:
-                    lowest = df.loc[0,i] * (results[i])["position"]
+                if df.loc[0,i] * (results[i])["position"] * (results[i])["confidence"] < lowest:
+                    lowest = df.loc[0,i] * (results[i])["position"] * (results[i])["confidence"]
                     lowestIndicator = i
             
-            df.loc[0,i] = df.loc[0,i] * (results[i])["position"]
+            df.loc[0,i] = df.loc[0,i] * (results[i])["position"] * (results[i])["confidence"]
 
         total = df.sum(axis = 1)
 
@@ -66,17 +67,17 @@ class Comparator():
             elif total[0] > 200: leverage = 2
             else: leverage = 1
             tradeWindow = pd.read_csv('./database/' + self.tickerName + '/trades.csv', index_col= 0)
-            tradeWindow = tradeWindow.append({'Time Stamp' : timestamp, 'Position': 1, 'Amount': results[highestIndicator]["amount"], 'Entry': results[highestIndicator]["entry"], 'Stop Loss': results[highestIndicator]["stoploss"], 'Target': results[highestIndicator]["takeprofit"], 'Leverage': leverage, 'Outcome': 'Pending', 'Profits': 0}, ignore_index = True)
+            tradeWindow = tradeWindow.append({'Time Stamp' : timestamp, 'Position': 1, 'Amount': results[highestIndicator]["amount"], 'Entry': results[highestIndicator]["entry"], 'Stop Loss': results[highestIndicator]["stoploss"], 'Target': results[highestIndicator]["takeprofit"], 'Confidence': results[highestIndicator]["confidence"], 'Leverage': leverage, 'Outcome': 'Pending', 'Profits': 0}, ignore_index = True)
             tradeWindow.to_csv('./database/' + self.tickerName + '/trades.csv')
-            self.executor.execute(self.tickerName, 1, results[highestIndicator]["amount"], results[highestIndicator]["stoploss"], results[highestIndicator]["takeprofit"], leverage)
+            self.executor.execute(self.tickerName, 1, results[highestIndicator]["amount"], results[highestIndicator]["entry"], results[highestIndicator]["stoploss"], results[highestIndicator]["takeprofit"], leverage)
         elif total[0] < -100:
             if total[0] < -500: leverage = 5
             elif total[0] < -200: leverage = 2
             else: leverage = 1
             tradeWindow = pd.read_csv('./database/' + self.tickerName + '/trades.csv', index_col= 0)
-            tradeWindow = tradeWindow.append({'Time Stamp' : timestamp, 'Position': -1, 'Amount': results[lowestIndicator]["amount"], 'Entry': results[lowestIndicator]["entry"], 'Stop Loss': results[lowestIndicator]["stoploss"], 'Target': results[lowestIndicator]["takeprofit"], 'Leverage': leverage, 'Outcome': 'Pending', 'Profits': 0}, ignore_index = True)
+            tradeWindow = tradeWindow.append({'Time Stamp' : timestamp, 'Position': -1, 'Amount': results[lowestIndicator]["amount"], 'Entry': results[lowestIndicator]["entry"], 'Stop Loss': results[lowestIndicator]["stoploss"], 'Target': results[lowestIndicator]["takeprofit"], 'Confidence': results[highestIndicator]["confidence"], 'Leverage': leverage, 'Outcome': 'Pending', 'Profits': 0}, ignore_index = True)
             tradeWindow.to_csv('./database/' + self.tickerName + '/trades.csv')
-            self.executor.execute(self.tickerName, -1, results[lowestIndicator]["amount"], results[lowestIndicator]["stoploss"], results[lowestIndicator]["takeprofit"], leverage)
+            self.executor.execute(self.tickerName, -1, results[lowestIndicator]["amount"], results[highestIndicator]["entry"], results[lowestIndicator]["stoploss"], results[lowestIndicator]["takeprofit"], leverage)
         pass
 
     def intervalAnalysis(self, update):

@@ -20,7 +20,7 @@ class Scraper():
         while True:
             repeat = repeat + 1
             self.scrape(analysisChangePendingToVoid)
-            if repeat == 24:
+            if repeat == 5:
                 repeat = 0
                 pr()
 
@@ -67,10 +67,10 @@ class Scraper():
         else:
             print("Creating and Updating " + self.tickerName + " at " + datetime.fromtimestamp(time.time()).strftime('%H:%M'))
             os.makedirs('./database/' + self.tickerName + '/')
-            analysisColumnNames = ['Time Stamp', 'Strategy', 'Position', 'Amount', 'Entry', 'Stop Loss', 'Take Profit', 'Outcome', 'Profits', 'Points Gained/Lost']
+            analysisColumnNames = ['Time Stamp', 'Strategy', 'Position', 'Amount', 'Entry', 'Stop Loss', 'Take Profit', 'Confidence', 'Outcome', 'Profits', 'Points Gained/Lost']
             analysisFrame = pd.DataFrame(columns=analysisColumnNames)
             analysisFrame.to_csv('./database/' + self.tickerName + '/analysis.csv')
-            tradeColumnNames = ['Time Stamp', 'Position', 'Amount', 'Entry', 'Stop Loss', 'Target', 'Leverage', 'Outcome', 'Profits']
+            tradeColumnNames = ['Time Stamp', 'Position', 'Amount', 'Entry', 'Stop Loss', 'Target', 'Confidence', 'Leverage', 'Outcome', 'Profits']
             tradeFrame = pd.DataFrame(columns=tradeColumnNames)
             tradeFrame.to_csv('./database/' + self.tickerName + '/trades.csv')
             df.to_csv('./database/' + self.tickerName + '/query.csv')

@@ -14,32 +14,36 @@ class Analyser():
                 if row['Position'] == 1:
                     if update['high'].values[0] > row['Take Profit']:
                         df.loc[index, 'Outcome'] = 'Success'
-                        df.loc[index, 'Points Gained/Lost'] = 1
+                        weightsChange = df.loc[index, 'Confidence']
+                        df.loc[index, 'Points Gained/Lost'] = weightsChange
                         df.loc[index, 'Profits'] = (df.loc[index,'Take Profit'] - df.loc[index, 'Entry']) / df.loc[index, 'Entry'] * df.loc[index, 'Amount']
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
-                        self.comparator.updateWeightage(row['Strategy'], 1)
+                        self.comparator.updateWeightage(row['Strategy'], weightsChange)
 
                     elif update['low'].values[0] < row['Stop Loss']:
                         df.loc[index, 'Outcome'] = 'Fail'
-                        df.loc[index, 'Points Gained/Lost'] = -1
+                        weightsChange = -1 * df.loc[index, 'Confidence']
+                        df.loc[index, 'Points Gained/Lost'] = weightsChange
                         df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index,'Entry']) / df.loc[index, 'Entry'] * df.loc[index,'Amount']
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
-                        self.comparator.updateWeightage(row['Strategy'], -1)
+                        self.comparator.updateWeightage(row['Strategy'], weightsChange)
 
                 elif row['Position'] == -1:
                     if update['low'].values[0] < row['Take Profit']:
                         df.loc[index, 'Outcome'] = 'Success'
-                        df.loc[index, 'Points Gained/Lost'] = 1
+                        weightsChange = df.loc[index, 'Confidence']
+                        df.loc[index, 'Points Gained/Lost'] = weightsChange
                         df.loc[index, 'Profits'] = (df.loc[index,'Take Profit'] - df.loc[index,'Entry']) / df.loc[index, 'Entry'] * (-1) * df.loc[index,'Amount']
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
-                        self.comparator.updateWeightage(row['Strategy'], 1)
+                        self.comparator.updateWeightage(row['Strategy'], weightsChange)
 
                     elif update['high'].values[0] > row['Stop Loss']:
                         df.loc[index, 'Outcome'] = 'Fail'
-                        df.loc[index, 'Points Gained/Lost'] = -1
+                        weightsChange = -1 * df.loc[index, 'Confidence']
+                        df.loc[index, 'Points Gained/Lost'] = weightsChange
                         df.loc[index, 'Profits'] = (df.loc[index,'Stop Loss'] - df.loc[index, 'Entry']) / df.loc[index, 'Entry'] * (-1) * df.loc[index, 'Amount']
                         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
-                        self.comparator.updateWeightage(row['Strategy'], -1)
+                        self.comparator.updateWeightage(row['Strategy'], weightsChange)
 
         # TO-DO: If ticker is currently trading, do intervalAnalysis
         pass
@@ -52,7 +56,7 @@ class Analyser():
 
         df = pd.read_csv('./database/' + self.tickerName + '/analysis.csv',index_col=0)
 
-        df = df.append({'Time Stamp' : dfDate, 'Strategy' : strategy, 'Position' : tradeDetails['position'], 'Amount': tradeDetails['amount'], 'Entry': tradeDetails['entry'], 'Stop Loss' : tradeDetails['stoploss'], 'Take Profit' : tradeDetails['takeprofit'], 'Outcome' : 'Pending', 'Profits' : 0, 'Points Gained/Lost' : 0}, ignore_index = True)
+        df = df.append({'Time Stamp' : dfDate, 'Strategy' : strategy, 'Position' : tradeDetails['position'], 'Amount': tradeDetails['amount'], 'Entry': tradeDetails['entry'], 'Stop Loss' : tradeDetails['stoploss'], 'Take Profit' : tradeDetails['takeprofit'], 'Confidence' : tradeDetails['confidence'], 'Outcome' : 'Pending', 'Profits' : 0, 'Points Gained/Lost' : 0}, ignore_index = True)
         df.to_csv('./database/' + self.tickerName + '/analysis.csv')
 
         pass
