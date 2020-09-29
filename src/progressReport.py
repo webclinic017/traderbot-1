@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 
+
 def progressReport():
     rootFolder = os.getcwd()
     analysisReportColumns = ['Ticker Name', 'Indicator', 'Score', 'Successful PseudoTrades', 'Failed PseudoTrades', 'Win/Loss Ratio', 'Amount Earned']
@@ -41,5 +42,6 @@ def progressReport():
     tradesReportFrame.to_csv('./reports/TradesReport.csv')
     pass
         
-
+if __name__ == '__main__':
+    progressReport()
 
