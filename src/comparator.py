@@ -9,11 +9,7 @@ class Comparator():
     def updateWeightage(self, strategy, points):
         df = pd.read_csv('./database/' + self.tickerName + '/IndicatorScore.csv', index_col=0)
 
-        if points < 0:
-            df.loc[0,strategy] = (1+(0.1*points)) * df.loc[0,strategy]
-        elif points > 0:
-            df.loc[0, strategy] = (1+(0.1*points)) * df.loc[0,strategy]
-        # if points < 0:
+        df.loc[0,strategy] = points + df.loc[0,strategy]
         #     df.loc[0, strategy] = 0.9 * df.loc[0, strategy]
         #     # fibonacci increment strategy
         #     # if df.loc[2,strategy] > 0:
