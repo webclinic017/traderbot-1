@@ -10,12 +10,12 @@ from comparator import Comparator
 from analyser import Analyser
 
 class StrategyCalculator():
-    def __init__(self, tickerName):
+    def __init__(self, tickerName, execType):
         self.tickerName = tickerName
-        self.comparator = Comparator(self.tickerName)
-        self.analyser = Analyser(self.tickerName, self.comparator)
+        self.comparator = Comparator(self.tickerName, execType)
+        self.analyser = Analyser(self.tickerName, self.comparator, execType)
     
-    def inform(self, df):
+    def inform(self, df, execType):
         # print("Calculating Strategy for " + str(self.tickerName) + " at " + str(timeStamp) + "...")
         ### TO-DO: Develop strategies to calculate
         
@@ -28,12 +28,13 @@ class StrategyCalculator():
         
         indi = ind.Indicator()
         
-        Results = indi.beginCalc(df, self.tickerName)
+        Results = indi.beginCalc(df, self.tickerName, execType)
 
         for i in Results:
             # print('Indicator: ' + i)
             # print('Position: ' + str((Results[i])['position']))
             if (Results[i])["position"] != 0:
+                # print("Indicator: " + i + ", Position: " + str((Results[i])["position"]) + ", Confidence: " + str((Results[i])["confidence"]))
                 self.analyser.PseudoTrade(df,i, Results[i])
 
             ### for testing

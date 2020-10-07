@@ -8,7 +8,13 @@ def progressReport():
     analysisReportFrame = pd.DataFrame(columns=analysisReportColumns)
     tradesReportColumns = ['Ticker Name', 'No. of Trades', 'Profits']
     tradesReportFrame = pd.DataFrame(columns=tradesReportColumns)
+    datesReportColumns = ['Date', 'No. of Trades']
+    datesReportFrame = pd.DataFrame(columns=datesReportColumns)
+    totalFolders = len(os.listdir(rootFolder + '/database'))
+    folderCount = 0
+    datedict = {}
     for parentFolder in os.listdir(rootFolder + '/database'):
+        print(str(folderCount / totalFolders * 100) + "% Completed")
         indicatorScore = pd.read_csv(rootFolder + '/database/' + parentFolder + '/IndicatorScore.csv', index_col= 0)
         analysis = pd.read_csv(rootFolder + '/database/' + parentFolder + '/analysis.csv', index_col= 0)
         indicators = list(indicatorScore.columns)
@@ -35,12 +41,24 @@ def progressReport():
         tradeNumber = 0
         tradeProfit = 0
         for index,row in trades.iterrows():
-            tradeNumber = tradeNumber + 1
-            tradeProfit = tradeProfit + row['Profits']
+            if row['Time Stamp'] in datedict:
+                datedict[str(row['Time Stamp'])] = datedict[str(row['Time Stamp'])] + 1
+            if not str(row['Time Stamp']) in datedict:
+                datedict[str(row['Time Stamp'])] = 1
+            
+
+
+            if row['Stop Loss'] != "inf" and row['Target'] != "inf" and row['Target'] != "-inf":
+                tradeNumber = tradeNumber + 1
+                tradeProfit = tradeProfit + row['Profits']
         tradesReportFrame = tradesReportFrame.append({'Ticker Name' : parentFolder, 'No. of Trades' : tradeNumber, 'Profits': tradeProfit}, ignore_index=True)
+        folderCount += 1
     analysisReportFrame.to_csv('./reports/AnalysisReport.csv')
     tradesReportFrame.to_csv('./reports/TradesReport.csv')
-    pass
+    for i in datedict:
+        datesReportFrame = datesReportFrame.append({'Date' : i, 'No. of Trades' : datedict[i]}, ignore_index=True)
+    datesReportFrame.to_csv('./reports/DatesReport.csv')
+    print(str(100) + "% Completed")
         
 if __name__ == '__main__':
     progressReport()

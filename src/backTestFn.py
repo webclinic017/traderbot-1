@@ -7,45 +7,42 @@ import os
 from yahooquery import Ticker
 from strategyCalculator import StrategyCalculator
 from progressReport import progressReport as pr
+import math
 
 TickerNames = pd.read_csv('./src/tickerNames/TickerNames.csv')
     
 TickerNames = TickerNames.values
 
 class backTestFn():
-    def __init__(self, tickerName):
+    def __init__(self, tickerName, sema):
         self.tickerName = tickerName
-        self.stratCalc = StrategyCalculator(self.tickerName)
+        self.stratCalc = StrategyCalculator(self.tickerName,0)
+        self.update(sema)
 
-    def update(self):
-        stratCalc = StrategyCalculator(self.tickerName)
-        tickers = Ticker(self.tickerName)
-        df = tickers.history(period='max', interval='1d')
+    def update(self, sema):
+        stratCalc = StrategyCalculator(self.tickerName,0)
+        df = pd.read_csv('./database/' + self.tickerName + '/temp.csv')
         # df = df.iloc[::-1]
+
+        counter = 0
+        totalCounter = len(df.index) - 200
+
         endOfBacktest = False
-        
+        oldprogress = 0
         while endOfBacktest == False:
-            if os.path.exists('./database/' + self.tickerName):
-                initialbool = False
-                if initialbool == False:
-                    df.to_csv('./database/' + self.tickerName + '/temp.csv')
-                    df = pd.read_csv('./database/' + self.tickerName + '/temp.csv', index_col=0)
-                    initialbool = True            
-                inputt = df
-                inputt = inputt.head(201)
-                inputt = inputt.iloc[::-1]
-                stratCalc.inform(df=inputt)
-                df = df.iloc[1:]
-                if len(df.index) < 201:
-                    endOfBacktest = True
-            else:
-                print("Creating and Updating " + self.tickerName + " at " + datetime.fromtimestamp(time.time()).strftime('%H:%M'))
-                os.makedirs('./database/' + self.tickerName + '/')
-                analysisColumnNames = ['Time Stamp', 'Strategy', 'Position', 'Amount', 'Entry', 'Stop Loss', 'Take Profit', 'Confidence', 'Outcome', 'Profits', 'Points Gained/Lost']
-                analysisFrame = pd.DataFrame(columns=analysisColumnNames)
-                analysisFrame.to_csv('./database/' + self.tickerName + '/analysis.csv')
-                tradeColumnNames = ['Time Stamp', 'Position', 'Amount', 'Entry', 'Stop Loss', 'Target', 'Confidence', 'Leverage', 'Outcome', 'Profits']
-                tradeFrame = pd.DataFrame(columns=tradeColumnNames)
-                tradeFrame.to_csv('./database/' + self.tickerName + '/trades.csv')
-                df.to_csv('./database/' + self.tickerName + '/temp.csv')
-                df = pd.read_csv('./database/' + self.tickerName + '/temp.csv')
+            
+            inputt = df
+            inputt = inputt.head(201)
+            inputt = inputt.iloc[::-1]
+            
+            stratCalc.inform(df=inputt, 0)
+            df = df.iloc[1:]
+            if len(df.index) < 201:
+                endOfBacktest = True
+            counter += 1
+            newprogress = math.floor(counter / totalCounter * 100)
+            if oldprogress != newprogress:
+                print(self.tickerName + ": " + str(newprogress) + "%")
+                oldprogress = newprogress
+        
+        sema.release()

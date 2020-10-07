@@ -5,10 +5,10 @@ import numpy as np
 import multiprocessing as mp
 from backTestFn import backTestFn
 
-def backTester():
-    TickerNames = pd.read_csv('./src/tickerNames/TickerNames.csv')
+
+if __name__ == '__main__':
         
-    TickerNames = TickerNames.values
+    TickerNames = [["ZM"]]
 
     print("Fetching data from Stocks")
     concurrency = 16
@@ -22,6 +22,3 @@ def backTester():
 
     for process in processes:
         process.join()
-        
-if __name__ == '__main__':
-    backTester()

@@ -1,236 +1,45 @@
 
 from talib import MACDFIX, RSI, EMA, SAR, SMA, TRIX, BBANDS
-from talib import CDLIDENTICAL3CROWS, CDL3BLACKCROWS, CDL3WHITESOLDIERS, CDLMORNINGSTAR, CDLEVENINGSTAR
-from talib import CDL3LINESTRIKE, CDLMORNINGDOJISTAR, CDLEVENINGDOJISTAR, CDL3OUTSIDE, CDLENGULFING
-from talib import CDLBELTHOLD, CDLABANDONEDBABY, CDL3INSIDE, CDLPIERCING, CDLDARKCLOUDCOVER
-from talib import CDLBREAKAWAY,CDLXSIDEGAP3METHODS, CDLHAMMER, CDLSHOOTINGSTAR, CDLCONCEALBABYSWALL
-from talib import CDLDOJISTAR, CDLRISEFALL3METHODS, CDLSEPARATINGLINES, CDLADVANCEBLOCK, CDLHANGINGMAN
-from talib import CDLINVERTEDHAMMER, CDLMATCHINGLOW, CDLSTICKSANDWICH, CDLUNIQUE3RIVER, CDLUPSIDEGAP2CROWS
 import indicators.ATRcalc as atrcalc
 import os
-
+from indicators.checkPatterns import check
 import pandas as pd
 class Indicator:
 
     # indicatorlist = ['ichimoku200', 'macdRSI', 'parabolic200', 'SMA200']    
-    def beginCalc(self, df, tickerName):
+    def beginCalc(self, df, tickerName, execType):
+        if execType == 0:
+            path = './backtestdatabase/'
+        elif execType == 1:
+            path = './database/'
         ## FILL THIS IN AS MORE INDICATORS ARE ADDED
         indicatorlist = ['ichimoku200','macdRSI', 'macd200', 'parabolic200', 'SMA200', 'trix200', 'macdTRIX', 'bbands200']
 
         # Step 1: Find out if analysis csv exists
         
-        if not os.path.exists('./database/' + tickerName + '/IndicatorScore.csv'):
+        if not os.path.exists(path + tickerName + '/IndicatorScore.csv'):
             columnNames = indicatorlist
             frame = pd.DataFrame(columns=columnNames)
             frame.loc[len(frame)] = 100
-            frame.to_csv('./database/' + tickerName + '/IndicatorScore.csv')
+            frame.to_csv(path + tickerName + '/IndicatorScore.csv')
         else:
             columnCheck = pd.read_csv('./database/' + tickerName + '/IndicatorScore.csv', index_col=0)
             for i in indicatorlist:
                 if not i in columnCheck.columns:
                     avg = columnCheck.mean(axis = 1)
                     columnCheck.insert(len(columnCheck.columns), i, avg)
-            columnCheck.to_csv('./database/' + tickerName + '/IndicatorScore.csv')
+            columnCheck.to_csv(path + tickerName + '/IndicatorScore.csv')
         resultsDict = {}
-
-
-        ## a. checkpatterns
-        cdlInput = df.head(20)
-        cdlInput = cdlInput.iloc[::-1]
-        aa = cdlInput['open'].values
-        ab = cdlInput['high'].values
-        ac = cdlInput['low'].values
-        ad = cdlInput['close'].values
-
-        # Strong Candlestick Patterns
-        output3BC = CDL3BLACKCROWS(aa,ab,ac,ad)
-        output3WS = CDL3WHITESOLDIERS(aa,ab,ac,ad)
-        outputCBS = CDLCONCEALBABYSWALL(aa,ab,ac,ad)
-        outputES = CDLEVENINGSTAR(aa,ab,ac,ad)
-        outputI3C = CDLIDENTICAL3CROWS(aa,ab,ac,ad)
-        outputMS = CDLMORNINGSTAR(aa,ab,ac,ad)
-
-        #Reliable Candlestick Patterns
-        output3LS = CDL3LINESTRIKE(aa,ab,ac,ad)
-        output3O = CDL3OUTSIDE(aa,ab,ac,ad)
-        outputAB = CDLABANDONEDBABY(aa,ab,ac,ad)
-        outputBH = CDLBELTHOLD(aa,ab,ac,ad)
-        outputDS = CDLDOJISTAR(aa,ab,ac,ad)
-        outputE = CDLENGULFING(aa,ab,ac,ad)
-        outputMDS = CDLMORNINGDOJISTAR(aa,ab,ac,ad)
-        outputEDS = CDLEVENINGDOJISTAR(aa,ab,ac,ad)
-        outputRF3M = CDLRISEFALL3METHODS(aa,ab,ac,ad)
-        outputSL = CDLSEPARATINGLINES(aa,ab,ac,ad)
-
-        #Weak Candlestick Patterns
-        output3I = CDL3INSIDE(aa,ab,ac,ad)
-        outputADVB = CDLADVANCEBLOCK(aa,ab,ac,ad)
-        outputB = CDLBREAKAWAY(aa,ab,ac,ad)
-        outputDCC = CDLDARKCLOUDCOVER(aa,ab,ac,ad)
-        outputH = CDLHAMMER(aa,ab,ac,ad)
-        outputHM = CDLHANGINGMAN(aa,ab,ac,ad)
-        outputIH = CDLINVERTEDHAMMER(aa,ab,ac,ad)
-        outputML = CDLMATCHINGLOW(aa,ab,ac,ad)
-        outputP = CDLPIERCING(aa,ab,ac,ad)
-        outputSS = CDLSHOOTINGSTAR(aa,ab,ac,ad)
-        outputSSW = CDLSTICKSANDWICH(aa,ab,ac,ad)
-        outputU3R = CDLUNIQUE3RIVER(aa,ab,ac,ad)
-        outputUG2C = CDLUPSIDEGAP2CROWS(aa,ab,ac,ad)
-        outputXSG3M = CDLXSIDEGAP3METHODS(aa,ab,ac,ad)
-
-        if output3LS[-1] > 0:
-            pattern = 1.84*1.3
-            patterntype = -1
-        elif output3LS[-1] < 0:
-            pattern = -1.65*1.3
-            patterntype = -1
-        elif output3O[-1] > 0:
-            pattern = 1.75*1.3
-            patterntype = -1
-        elif output3O[-1] < 0:
-            pattern = -1.69*1.3
-            patterntype = -1
-        elif outputAB[-1] > 0:
-            pattern = 1.7*1.3
-            patterntype = -1
-        elif outputAB[-1] < 0:
-            pattern = -1.69*1.3
-            patterntype = -1
-        elif outputBH[-1] >0:
-            pattern = 1.71*1.3
-            patterntype = -1
-        elif outputBH[-1] <0:
-            pattern = -1.68*1.3
-            patterntype = -1
-        elif outputDS[-1] >0:
-            pattern = 1.69*1.3
-            patterntype = 1
-        elif outputDS[-1] < 0:
-            pattern = -1.64*1.3
-            patterntype = 1
-        elif outputE[-1] >0:
-            pattern = 1.63*1.3
-            patterntype = -1
-        elif outputE[-1] <0:
-            pattern = 1.79*1.3
-            patterntype = -1
-        elif outputEDS[-1] <0:
-            pattern = -1.71*1.3
-            patterntype = -1
-        elif outputMDS[-1] >0:
-            pattern = 1.76*1.3
-            patterntype = -1
-        elif outputRF3M[-1] >0:
-            pattern = 1.74*1.3
-            patterntype = 1
-        elif outputRF3M[-1] <0:
-            pattern = -1.71*1.3
-            patterntype = 1
-        elif outputSL[-1] >0:
-            pattern = 1.72*1.3
-            patterntype = 1
-        elif outputSL[-1] < 0:
-            pattern = -1.63*1.3
-            patterntype = 1
-        elif output3BC[-1] < 0:
-            pattern = -1.78*1.5
-            patterntype = -1
-        elif output3WS[-1] >0:
-            pattern = 1.83*1.5
-            patterntype = -1
-        elif outputCBS[-1] <0:
-            pattern = -1.75*1.5
-            patterntype = 1
-        elif outputES[-1] <0:
-            pattern = -1.72*1.5
-            patterntype = -1
-        elif outputI3C[-1] < 0:
-            pattern = -1.79*1.5
-            patterntype = -1
-        elif outputMS[-1] >0:
-            pattern = 1.78*1.5
-            patterntype = -1
-        elif output3I[-1] >0:
-            pattern = 1.65*1.1
-            patterntype = -1
-        elif output3I[-1] <0:
-            pattern = 1.6*1.1
-            patterntype = -1
-        elif outputADVB[-1] >0:
-            pattern = 1.64*1.1
-            patterntype = 1
-        elif outputB[-1] >0:
-            pattern = 1.59*1.1
-            patterntype = -1
-        elif outputB[-1]<0:
-            pattern = -1.63*1.1
-            patterntype = -1
-        elif outputDCC[-1] <0:
-            pattern = -1.6*1.1
-            patterntype = -1
-        elif outputH[-1] >0:
-            pattern = 1.6*1.1
-            patterntype = -1
-        elif outputHM[-1] >0:
-            pattern = 1.59*1.1
-            patterntype = 1
-        elif outputIH[-1] <0:
-            pattern = -1.65*1.1
-            patterntype = 1
-        elif outputML[-1] < 0:
-            pattern = -1.61*1.1
-            patterntype = 1
-        elif outputP[-1] >0:
-            pattern = 1.64*1.1
-            patterntype = -1
-        elif outputSS[-1] <0:
-            pattern = -1.59*1.1
-            patterntype = -1
-        elif outputSSW[-1] <0:
-            pattern = -1.62*1.1
-            patterntype = 1
-        elif outputU3R[-1] < 0:
-            pattern = -1.6*1.1
-            patterntype = 1
-        elif outputUG2C[-1] >0:
-            pattern = 1.6*1.1
-            patterntype = 1
-        elif outputXSG3M[-1] > 0:
-            pattern = 1.62*1.1
-            patterntype = -1
-        elif outputXSG3M[-1] <0:
-            pattern = -1.59*1.1
-            patterntype = -1
-        else: 
-            pattern = 0
-            patterntype = 0
-
-        
-        # if output3BC[-1] > 0 or output3WS[-1] > 0 + outputCBS[-1] > 0 or outputES[-1] > 0 or outputI3C[-1] > 0 or outputMS[-1] > 0:
-        #     pattern = 1.5
-        # elif output3BC[-1] < 0 or output3WS[-1] < 0 + outputCBS[-1] < 0 or outputES[-1] < 0 or outputI3C[-1] < 0 or outputMS[-1] < 0:
-        #     pattern = -1.5
-        # elif output3LS[-1] > 0 or output3O[-1] > 0 or outputAB[-1] > 0 or outputBH[-1] > 0 or outputDS[-1] > 0 or outputE[-1] > 0 or outputMDS[-1] > 0 or outputEDS[-1] > 0 or outputRF3M[-1] > 0 or outputSL[-1] > 0:
-        #     pattern = 1.3
-        # elif output3LS[-1] < 0 or output3O[-1] < 0 or outputAB[-1] < 0 or outputBH[-1] < 0 or outputDS[-1] < 0 or outputE[-1] < 0 or outputMDS[-1] < 0 or outputEDS[-1] < 0 or outputRF3M[-1] < 0 or outputSL[-1] < 0:
-        #     pattern = -1.3
-        # elif output3I[-1] > 0 or outputADVB[-1] > 0 or outputB[-1] > 0 or outputDCC[-1] > 0 or outputH[-1] > 0 or outputHM[-1] > 0 or outputIH[-1] > 0 or outputML[-1] > 0 or outputP[-1] > 0 or outputSS[-1] > 0 or outputSSW[-1] > 0 or outputU3R[-1] > 0 or outputUG2C[-1] > 0 or outputXSG3M[-1] > 0:
-        #     pattern = 1.1
-        # elif output3I[-1] < 0 or outputADVB[-1] < 0 or outputB[-1] < 0 or outputDCC[-1] < 0 or outputH[-1] < 0 or outputHM[-1] < 0 or outputIH[-1] < 0 or outputML[-1] < 0 or outputP[-1] < 0 or outputSS[-1] < 0 or outputSSW[-1] < 0 or outputU3R[-1] < 0 or outputUG2C[-1] < 0 or outputXSG3M[-1] < 0:
-        #     pattern = -1.1
-        # else: pattern = 0
-        
-
 
         for i in indicatorlist:
             fnRun = getattr(self, i)
-            position, amount, currentclose, stoploss, takeprofit, confidence = fnRun(df, pattern, patterntype)
+            position, amount, currentclose, stoploss, takeprofit, confidence = fnRun(df)
             indivResult = {"position":position, "amount":amount, "entry":currentclose, "stoploss":stoploss, "takeprofit":takeprofit, "confidence":confidence}
             resultsDict[i] = indivResult
             
         return resultsDict
     
-    def ichimoku200(self,df, pattern,patterntype):
+    def ichimoku200(self,df):
         ## Step 1: 
         #####PLACEHOLDER
         # df = pd.read_csv('./database/TSLA/temp2.csv')
@@ -394,6 +203,7 @@ class Indicator:
             position = -1 ##short
         else: position = 0 ## no position
         amount = 50
+        confidence = 0
         if position == 1:
             closeKijunDistance = priceclose - CurrentKijun
             adjustedDistance = 1.05 * closeKijunDistance
@@ -405,6 +215,13 @@ class Indicator:
                 position = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
 
         elif position == -1:
             closeKijunDistance = CurrentKijun - priceclose
@@ -417,24 +234,23 @@ class Indicator:
                 position = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         else: 
             amount = 0
             stoploss = 0
             takeprofit = 0
 
-        
-        if position * pattern > 0:
-            confidence = abs(pattern)
-        elif position * pattern < 0:
-            confidence = abs(1/pattern)
-        elif position == 0: confidence = 0
-        else: confidence = 1
-        
         # ##FOR TEST
         # position = 1
         return [position, amount, priceclose, stoploss, takeprofit, confidence]
 
-    def macdRSI(self,df, pattern,patterntype):
+    def macdRSI(self,df):
         #1. Calculate ATR for potential trade
         atr = atrcalc.ATRcalc(df)
         #####PLACEHOLDER
@@ -489,6 +305,7 @@ class Indicator:
         else: position = 0
 
         amount = 50
+        confidence = 0
         if position == 1:
             stoploss = priceclose - 1.05 * atr
             takeprofit = priceclose + 1.45 * atr
@@ -498,6 +315,13 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
 
         elif position == -1:
             stoploss = priceclose + 1.05*atr
@@ -508,6 +332,13 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         else:
             stoploss = 0
             takeprofit = 0
@@ -515,19 +346,12 @@ class Indicator:
 
         ##For test
         # position = 1
-
-        if position * pattern > 0:
-            confidence = abs(pattern)
-        elif position * pattern < 0:
-            confidence = abs(1/pattern)
-        elif position == 0: confidence = 0
-        else: confidence = 1
         
         # ##FOR TEST
         # position = 1
         return [position, amount, priceclose, stoploss, takeprofit, confidence]
 
-    def parabolic200(self,df, pattern,patterntype):
+    def parabolic200(self,df):
         df = df.dropna()
 
         ###1. Getting Parameters
@@ -586,6 +410,8 @@ class Indicator:
 
         amount = 50
 
+        confidence = 0
+
         if position == 1:
             stoploss = sarCurrent[-1]
             takeprofit = priceclose + 1.45*(priceclose - sarCurrent[-1])
@@ -595,6 +421,13 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         elif position == -1:
             stoploss = sarCurrent[-1]
             takeprofit = priceclose - 1.45 * (sarCurrent[-1] - priceclose)
@@ -604,6 +437,13 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         else:
             stoploss = 0
             takeprofit = 0
@@ -612,18 +452,11 @@ class Indicator:
         ##For test
         # position = 1
 
-        if position * pattern > 0:
-            confidence = abs(pattern)
-        elif position * pattern < 0:
-            confidence = abs(1/pattern)
-        elif position == 0: confidence = 0
-        else: confidence = 1
-        
         # ##FOR TEST
         # position = 1
         return [position, amount, priceclose, stoploss, takeprofit, confidence]
 
-    def SMA200(self,df, pattern,patterntype):
+    def SMA200(self,df):
         df = df.dropna()
 
         ###1. Getting Parameters
@@ -678,6 +511,7 @@ class Indicator:
 
         atr = atrcalc.ATRcalc(df)
         amount = 50
+        confidence = 0
         if position == 1:
             stoploss = priceclose - 1.05 * atr
             takeprofit = priceclose + 1.45 * atr
@@ -687,6 +521,13 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         elif position == -1:
             stoploss = priceclose + 1.05*atr
             takeprofit = priceclose - 1.45 * atr
@@ -696,22 +537,23 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         else:
             stoploss = 0
             takeprofit = 0
             amount = 0
 
-        if position * pattern > 0:
-            confidence = abs(pattern)
-        elif position * pattern < 0:
-            confidence = abs(1/pattern)
-        elif position == 0: confidence = 0
-        else: confidence = 1
         # ##FOR TEST
         # position = 1
         return [position, amount, priceclose, stoploss, takeprofit, confidence]
 
-    def macd200(self,df, pattern,patterntype):
+    def macd200(self,df):
         #1. Calculate ATR for potential trade
         atr = atrcalc.ATRcalc(df)
         #####PLACEHOLDER
@@ -775,6 +617,7 @@ class Indicator:
         elif marketEMA == -1 and crossover < 0  and macd[-1] > 0: position = -1
         else: position = 0
         amount = 50
+        confidence = 0
         if position == 1:
             stoploss = priceclose - 1.05 * atr
             takeprofit = priceclose + 1.45 * atr
@@ -784,6 +627,14 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+
         elif position == -1:
             stoploss = priceclose + 1.05*atr
             takeprofit = priceclose - 1.45 * atr
@@ -793,6 +644,13 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         else:
             stoploss = 0
             takeprofit = 0
@@ -801,18 +659,12 @@ class Indicator:
         ##For test
         # position = 1
 
-        if position * pattern > 0:
-            confidence = abs(pattern)
-        elif position * pattern < 0:
-            confidence = abs(1/pattern)
-        elif position == 0: confidence = 0
-        else: confidence = 1
         
         # ##FOR TEST
         # position = 1
         return [position, amount, priceclose, stoploss, takeprofit, confidence]
 
-    def trix200(self,df, pattern, patterntype):
+    def trix200(self,df):
         df = df.dropna()
 
         #1. Calculate ATR for potential trade
@@ -854,6 +706,7 @@ class Indicator:
         elif marketEMA == -1 and crossover < 0: position = -1
         else: position = 0
         amount = 50
+        confidence = 0
         if position == 1:
             stoploss = priceclose - 1.05 * atr
             takeprofit = priceclose + 1.45 * atr
@@ -863,6 +716,14 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+
         elif position == -1:
             stoploss = priceclose + 1.05*atr
             takeprofit = priceclose - 1.45 * atr
@@ -872,23 +733,24 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         else:
             stoploss = 0
             takeprofit = 0
             amount = 0
-        
-        if position * pattern > 0:
-            confidence = abs(pattern)
-        elif position * pattern < 0:
-            confidence = abs(1/pattern)
-        elif position == 0: confidence = 0
-        else: confidence = 1
+
         
         # ##FOR TEST
         # position = 1
         return [position, amount, priceclose, stoploss, takeprofit, confidence]
 
-    def macdTRIX(self,df, pattern,patterntype):
+    def macdTRIX(self,df):
         df = df.dropna()
         #1. Calculate ATR for potential trade
         atr = atrcalc.ATRcalc(df)
@@ -926,6 +788,7 @@ class Indicator:
         elif delayedmacd[-1] > delayedmacdsignal[-1] and macd[-1] < macdsignal[-1] and trixOutput[-1] > 0: position = -1
         else: position = 0
         amount = 50
+        confidence = 0
         if position == 1:
             stoploss = priceclose - 1.05 * atr
             takeprofit = priceclose + 1.45 * atr
@@ -935,6 +798,13 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         elif position == -1:
             stoploss = priceclose + 1.05*atr
             takeprofit = priceclose - 1.45 * atr
@@ -944,6 +814,13 @@ class Indicator:
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
         else:
             stoploss = 0
             takeprofit = 0
@@ -951,22 +828,18 @@ class Indicator:
 
         ##For test
         # position = 1
-        if position * pattern > 0:
-            confidence = abs(pattern)
-        elif position * pattern < 0:
-            confidence = abs(1/pattern)
-        elif position == 0: confidence = 0
-        else: confidence = 1
-        
+
         # ##FOR TEST
         # position = 1
         return [position, amount, priceclose, stoploss, takeprofit, confidence]
 
-    def bbands200(self,df, pattern, patterntype):
+    def bbands200(self,df):
         df = df.dropna()
 
         #1. Calculate ATR for potential trade
         atr = atrcalc.ATRcalc(df)
+
+        pattern, patterntype = check(df.head(20))
 
         ##b. get BBands
         bband = df.head(21)
@@ -1000,37 +873,44 @@ class Indicator:
         elif marketEMA == -1 and pattern <0 and patterntype == -1 and breakBand == -1: position = -1
         else: position = 0
         amount = 50
+        confidence = 0
         if position == 1:
-            stoploss = priceclose - 1.05 * atr
-            takeprofit = priceclose + 1.45 * atr
+            stoploss = priceclose - (1.05 * atr)
+            takeprofit = priceclose + (1.45 * atr)
             # amount = priceclose / (priceclose - stoploss)
             if(stoploss - priceclose) * amount < 0.1:
                 position = 0
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
                 
         elif position == -1:
-            stoploss = priceclose + 1.05*atr
-            takeprofit = priceclose - 1.45 * atr
+            stoploss = priceclose + (1.05*atr)
+            takeprofit = priceclose - (1.45 * atr)
             # amount = priceclose / (stoploss - priceclose)
             if(stoploss - priceclose) * amount < 0.1:
                 position = 0
                 amount = 0
                 stoploss = 0
                 takeprofit = 0
+            else:
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
 
         else:
             stoploss = 0
             takeprofit = 0
             amount = 0
 
-        if position * pattern > 0:
-            confidence = abs(pattern)
-        elif position * pattern < 0:
-            confidence = abs(1/pattern)
-        elif position == 0: confidence = 0
-        else: confidence = 1
         
         # ##FOR TEST
         # position = 1
