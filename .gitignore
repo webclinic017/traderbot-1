@@ -1,0 +1,8 @@
+/database/*
+__pycache__/
+env/
+*.csv
+reports/AnalysisReport.csv
+*.csv
+*.csv
+*.csv

@@ -1,45 +1,48 @@
 
-from talib import MACDFIX, RSI, EMA
+from talib import MACDFIX, RSI, EMA, SAR, SMA, TRIX, BBANDS
+import indicators.ATRcalc as atrcalc
 import os
-
+from indicators.checkPatterns import check
 import pandas as pd
 class Indicator:
 
-    
-    # indicatorlist = ['ichimoku200', 'macdRSI']    
-    def beginCalc(self, df, tickerName, atr):
+    # indicatorlist = ['ichimoku200', 'macdRSI', 'parabolic200', 'SMA200']    
+    def beginCalc(self, df, tickerName, execType):
+        if execType == 0:
+            path = './backtestdatabase/'
+        elif execType == 1:
+            path = './database/'
         ## FILL THIS IN AS MORE INDICATORS ARE ADDED
-        indicatorlist = ['ichimoku200','macdRSI']
+        indicatorlist = ['ichimoku200','macdRSI', 'macd200', 'parabolic200', 'SMA200', 'trix200', 'macdTRIX', 'bbands200']
 
         # Step 1: Find out if analysis csv exists
         
-        if not os.path.exists('./database/' + tickerName + '/IndicatorScore.csv'):
+        if not os.path.exists(path + tickerName + '/IndicatorScore.csv'):
             columnNames = indicatorlist
             frame = pd.DataFrame(columns=columnNames)
             frame.loc[len(frame)] = 100
-            frame.loc[len(frame)] = 0
-            frame.loc[len(frame)] = 1
-            frame.to_csv('./database/' + tickerName + '/IndicatorScore.csv')
+            frame.to_csv(path + tickerName + '/IndicatorScore.csv')
         else:
             columnCheck = pd.read_csv('./database/' + tickerName + '/IndicatorScore.csv', index_col=0)
             for i in indicatorlist:
                 if not i in columnCheck.columns:
                     avg = columnCheck.mean(axis = 1)
                     columnCheck.insert(len(columnCheck.columns), i, avg)
-            columnCheck.to_csv('./database/' + tickerName + '/IndicatorScore.csv')
+            columnCheck.to_csv(path + tickerName + '/IndicatorScore.csv')
         resultsDict = {}
 
         for i in indicatorlist:
             fnRun = getattr(self, i)
-            output = fnRun(df)
-            resultsDict[i] = output
+            position, amount, currentclose, stoploss, takeprofit, confidence = fnRun(df)
+            indivResult = {"position":position, "amount":amount, "entry":currentclose, "stoploss":stoploss, "takeprofit":takeprofit, "confidence":confidence}
+            resultsDict[i] = indivResult
             
         return resultsDict
     
     def ichimoku200(self,df):
         ## Step 1: 
         #####PLACEHOLDER
-        # df = pd.read_csv('./database/AAPL.csv')
+        # df = pd.read_csv('./database/TSLA/temp2.csv')
         #####END_PLACEHOLDER
         df = df.dropna()
         ###1. Getting Parameters
@@ -95,7 +98,6 @@ class Indicator:
         CurrentSenkouA = (PastKijun + PastTenkan) / 2
         # print("SenkouACurrent\n", CurrentSenkouA)
 
-
         ##i. Senkou Span B Past
         PastPastfifty_two = df.iloc[52:].head(52)
         PastPastfifty_two_high = PastPastfifty_two['high'].max()
@@ -117,11 +119,9 @@ class Indicator:
         ##l. Senkou Span A Past
         PastSenkouA = (PastPastKijun + PastPastTenkan) / 2
 
-        
-
-
         ##m. 200EMA
         emaInput = df.head(200)
+        emaInput = emaInput.iloc[::-1]
         EMAclose = emaInput['close'].values
         ema = EMA(EMAclose, timeperiod=200)
         # print("EMA\n", ema[-1])
@@ -135,17 +135,36 @@ class Indicator:
 
         # print("pricehigh\n", pricehigh)
         # print("pricelow\n", pricelow)
-        
+
         ### 2. Analysing using Data Provided
         ##tenkan-kijun crossover type
             ## -1 means negative crossover
             ## 1 means positive crossover
             ## 0 means both
 
-        if CurrentTenkan > CurrentKijun: crossover = 1
-        elif CurrentTenkan < CurrentKijun: crossover = -1
-        else: crossover = 0
+        delayOnePeriod = df.iloc[1:]
 
+        ##b. Current Kijun-Sen
+        Delaytwenty_six = delayOnePeriod.head(26)
+        Delaytwenty_six_high = Delaytwenty_six['high'].max()
+        Delaytwenty_six_low = Delaytwenty_six['low'].min()
+        DelayKijun = (Delaytwenty_six_high + Delaytwenty_six_low) / 2
+        # print("Delay Kijun-Sen\n" , DelayKijun)
+
+        ##c. Current Tenkan-Sen
+        Delaynine = Delaytwenty_six.head(9)
+        Delaynine_high = Delaynine['high'].max()
+        Delaynine_low = Delaynine['low'].min()
+        DelayTenkan = (Delaynine_high + Delaynine_low)/2
+
+        # print("Tenkan-Sen\n", DelayTenkan)
+
+        if DelayTenkan <= DelayKijun and CurrentTenkan >= CurrentKijun and pricelow > CurrentTenkan:
+            crossover = 1
+        elif DelayTenkan >= DelayKijun and CurrentTenkan <= CurrentKijun and pricehigh < CurrentTenkan:
+            crossover = -1
+
+        else: crossover = 0
 
         ##ahead cloud colour
             ## -1 means red cloud
@@ -170,23 +189,70 @@ class Indicator:
             ## -1 means close is below current cloud, and close (lagging span) below the past cloud too
             ## 0 means otherwise (absolutely no trading)
 
-        if  priceclose > max(CurrentSenkouA,CurrentSenkouB) and priceclose > max(PastSenkouB,PastSenkouA):
+        if  pricelow > max(CurrentSenkouA,CurrentSenkouB) and pricelow > max(PastSenkouB,PastSenkouA):
             marketCloud = 1
-        elif priceclose < max(CurrentSenkouB, CurrentSenkouA) and priceclose < max(PastSenkouA, PastSenkouB):
+        elif pricehigh < min(CurrentSenkouB, CurrentSenkouA) and pricehigh < min(PastSenkouA, PastSenkouB):
             marketCloud = -1
         else: marketCloud = 0
 
 
 
-        if marketCloud == 1 and marketEMA >= 0 and AheadCloud >= 0 and crossover >= 0:
+        if marketCloud == 1 and marketEMA > 0 and AheadCloud >= 0 and crossover > 0:
             position = 1 ##long
-        elif marketCloud == -1 and marketEMA <=0 and AheadCloud <= 0 and crossover <= 0:
+        elif marketCloud == -1 and marketEMA < 0 and AheadCloud <= 0 and crossover < 0:
             position = -1 ##short
         else: position = 0 ## no position
+        amount = 50
+        confidence = 0
+        if position == 1:
+            closeKijunDistance = priceclose - CurrentKijun
+            adjustedDistance = 1.05 * closeKijunDistance
+            stoploss = priceclose - adjustedDistance
+            # amount = priceclose / (priceclose-stoploss)
+            takeprofit = priceclose + 1.45*(priceclose - stoploss)
+            if (takeprofit - priceclose) * amount < 0.1:
+                amount = 0
+                position = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
 
-        return position
+        elif position == -1:
+            closeKijunDistance = CurrentKijun - priceclose
+            adjustedDistance = 1.05 * closeKijunDistance
+            stoploss = priceclose + adjustedDistance
+            # amount = priceclose / (stoploss - priceclose)
+            takeprofit = priceclose - 1.45*(stoploss - priceclose)
+            if(priceclose - takeprofit) * amount < 0.1:
+                amount = 0
+                position = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        else: 
+            amount = 0
+            stoploss = 0
+            takeprofit = 0
+
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit, confidence]
 
     def macdRSI(self,df):
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
         #####PLACEHOLDER
         # df = pd.read_csv('./database/AAPL.csv')
         #####END_PLACEHOLDER
@@ -195,19 +261,326 @@ class Indicator:
         ###1. Getting Parameters
         ##a. RSI
         rsiInput = df.head(15)
+        rsiInput = rsiInput.iloc[::-1]
         RSIclose = rsiInput['close'].values
         rsi = RSI(RSIclose,timeperiod=14)
         # print("RSI\n", rsi[-1])
 
         ##b. MACD
         macdInput = df.head(34)
+        macdInput = macdInput.iloc[::-1]
         MACDclose = macdInput['close'].values
         macd, macdsignal, macdhist = MACDFIX(MACDclose, signalperiod = 9)
         # print("MACD\n", macd[-1])
         # print("Signal\n", macdsignal[-1])
 
+        ##c. DelayedMACD
+        delayedmacdInput = df.iloc[1:].head(34)
+        delayedmacdInput = delayedmacdInput.iloc[::-1]
+        delayedMACDclose = delayedmacdInput['close'].values
+        delayedmacd, delayedmacdsignal, delayedmacdhist = MACDFIX(delayedMACDclose, signalperiod = 9)
+
+
+        ##d. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+        # print("pricehigh\n", pricehigh)
+        # print("pricelow\n", pricelow)
+
+        ###2. Analysing using the data provided
+
+        ##macd-signal crossover type
+        ## -1 means negative crossover
+        ## 1 means positive crossover
+        ## 0 means both
+        if delayedmacd[-1] < delayedmacdsignal[-1] and macd[-1] > macdsignal[-1]: crossover = 1
+        elif delayedmacd[-1] > delayedmacdsignal[-1] and macd[-1] < macdsignal[-1]: crossover = -1
+        else: crossover = 0
+
+        ##OUTPUT
+        if crossover > 0 and rsi[-1] <= 50 and macd[-1] < 0: position = 1
+        elif crossover < 0 and rsi[-1] >= 50 and macd[-1] > 0: position = -1
+        else: position = 0
+
+        amount = 50
+        confidence = 0
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            # amount = priceclose / (priceclose - stoploss)
+            if (priceclose - stoploss) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            # amount = priceclose / (stoploss - priceclose)
+            if(stoploss - priceclose) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        ##For test
+        # position = 1
+        
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit, confidence]
+
+    def parabolic200(self,df):
+        df = df.dropna()
+
+        ###1. Getting Parameters
+        ##a. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+        ##b. SAR current
+
+        sarCurrentInput = df.head(2)
+        sarCurrentInput = sarCurrentInput.iloc[::-1]
+        sarCurrentInputHigh = sarCurrentInput['high'].values
+        sarCurrentInputLow = sarCurrentInput['low'].values
+        sarCurrent = SAR(sarCurrentInputHigh, sarCurrentInputLow, acceleration = 0, maximum = 0)
+
+        ##c. previous price action
+        prevaction = df.iloc[1:].head(1)
+        prevhigh = prevaction['high'].values[0]
+        prevlow = prevaction['low'].values[0]
+        prevclose = prevaction['close'].values[0]
+
+        ##d. previous SAR
+        sarPreviousInput = df.iloc[1:].head(2)
+        sarPreviousInput = sarPreviousInput.iloc[::-1]
+        sarPreviousInputHigh = sarPreviousInput['high'].values
+        sarPreviousInputLow = sarPreviousInput['low'].values
+        sarPrevious = SAR(sarPreviousInputHigh, sarPreviousInputLow, acceleration = 0, maximum = 0)
+
+        ##b. 200EMA
+        emaInput = df.head(200)
+        emaInput = emaInput.iloc[::-1]
+        EMAclose = emaInput['close'].values
+        ema = EMA(EMAclose, timeperiod=200)
+
+        ## SAR reversal
+        ## 1 if from -ve become +ve
+        ## -1 if from +ve become -ve
+        ## 0 otherwise
+
+        if prevclose < sarPrevious[-1] and priceclose > sarCurrent[-1]:
+            change = 1
+        elif prevclose > sarPrevious[-1] and priceclose < sarCurrent[-1]:
+            change = -1
+        else: change = 0
+
+        ## 200EMA filtering false signal
+        if pricelow > ema[-1]: marketEMA = 1
+        elif pricehigh < ema[-1]: marketEMA = -1
+        else: marketEMA = 0
+
+        ##OUTPUT
+        if marketEMA == 1 and change == 1 : position = 1
+        elif marketEMA == -1 and change == -1: position = -1
+        else: position = 0
+
+        amount = 50
+
+        confidence = 0
+
+        if position == 1:
+            stoploss = sarCurrent[-1]
+            takeprofit = priceclose + 1.45*(priceclose - sarCurrent[-1])
+            # amount = priceclose / (priceclose - stoploss)
+            if(priceclose - stoploss) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        elif position == -1:
+            stoploss = sarCurrent[-1]
+            takeprofit = priceclose - 1.45 * (sarCurrent[-1] - priceclose)
+            # amount = priceclose / (stoploss - priceclose)
+            if(stoploss - priceclose) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        ##For test
+        # position = 1
+
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit, confidence]
+
+    def SMA200(self,df):
+        df = df.dropna()
+
+        ###1. Getting Parameters
+        ##a. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+
+        ##b. previous price action
+        prevaction = df.iloc[1:].head(1)
+        prevhigh = prevaction['high'].values[0]
+        prevlow = prevaction['low'].values[0]
+        prevclose = prevaction['close'].values[0]
+
+        ##d. current SMAs
+        smaCurrentInput = df.head(20)
+        sma20Current = SMA(smaCurrentInput['close'].values, timeperiod=20)
+        smaCurrentInput = smaCurrentInput.head(10)
+        sma10Current = SMA(smaCurrentInput['close'].values, timeperiod=10)
+
+        ##e. previous SMAs
+        smaPreviousInput = df.iloc[1:].head(20)
+        sma20Previous = SMA(smaPreviousInput['close'].values, timeperiod=20)
+        smaPreviousInput = smaPreviousInput.head(10)
+        sma10Previous = SMA(smaPreviousInput['close'].values,timeperiod=10)
+
+        ##f. 200EMA
+        emaInput = df.head(200)
+        emaInput = emaInput.iloc[::-1]
+        EMAclose = emaInput['close'].values
+        ema = EMA(EMAclose, timeperiod=200)
+
+        ##trade conditions
+
+        if sma10Previous[-1] < sma20Previous[-1] and sma10Current[-1] > sma20Current[-1]:
+            crossover = 1
+        elif sma10Previous[-1] > sma20Previous[-1] and sma10Current[-1] < sma20Current[-1]:
+            crossover = -1
+        else: crossover = 0
+
+        ## 200EMA filtering false signal
+        if pricelow > ema[-1]: marketEMA = 1
+        elif pricehigh < ema[-1]: marketEMA = -1
+        else: marketEMA = 0
+
+        if crossover == 1 and marketEMA == 1:
+            position = 1
+        elif crossover == -1 and marketEMA == -1:
+            position = -1
+        else: position = 0
+
+        atr = atrcalc.ATRcalc(df)
+        amount = 50
+        confidence = 0
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            # amount = priceclose / (priceclose - stoploss)
+            if(priceclose- stoploss) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            # amount = priceclose / (stoploss - priceclose)
+            if(stoploss - priceclose) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit, confidence]
+
+    def macd200(self,df):
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
+        #####PLACEHOLDER
+        # df = pd.read_csv('./database/AAPL.csv')
+        #####END_PLACEHOLDER
+        df = df.dropna()
+
+        ###1. Getting Parameters
+        
+
+        ##b. MACD
+        macdInput = df.head(34)
+        macdInput = macdInput.iloc[::-1]
+        MACDclose = macdInput['close'].values
+        macd, macdsignal, macdhist = MACDFIX(MACDclose, signalperiod = 9)
+        # print("MACD\n", macd[-1])
+        # print("Signal\n", macdsignal[-1])
+
+        ##c. DelayedMACD
+        delayedmacdInput = df.iloc[1:].head(34)
+        delayedmacdInput = delayedmacdInput.iloc[::-1]
+        delayedMACDclose = delayedmacdInput['close'].values
+        delayedmacd, delayedmacdsignal, delayedmacdhist = MACDFIX(delayedMACDclose, signalperiod = 9)
+
         ##c. 200EMA
         emaInput = df.head(200)
+        emaInput = emaInput.iloc[::-1]
         EMAclose = emaInput['close'].values
         ema = EMA(EMAclose, timeperiod=200)
 
@@ -217,9 +590,9 @@ class Indicator:
         priceaction = df.head(1)
         pricehigh = priceaction['high'].values[0]
         pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
         # print("pricehigh\n", pricehigh)
         # print("pricelow\n", pricelow)
-
 
         ###2. Analysing using the data provided
 
@@ -227,10 +600,9 @@ class Indicator:
         ## -1 means negative crossover
         ## 1 means positive crossover
         ## 0 means both
-        if macd[-1] > macdsignal[-1]: crossover = 1
-        elif macd[-1] < macdsignal[-1]: crossover = -1
+        if delayedmacd[-1] < delayedmacdsignal[-1] and macd[-1] > macdsignal[-1]: crossover = 1
+        elif delayedmacd[-1] > delayedmacdsignal[-1] and macd[-1] < macdsignal[-1]: crossover = -1
         else: crossover = 0
-
         ##market-ema type
         ## 1 means low > 200EMA
         ## -1 means high < 200EMA
@@ -240,17 +612,306 @@ class Indicator:
         elif pricehigh < ema[-1]: marketEMA = -1
         else: marketEMA = 0
 
+        ##OUTPUT
+        if marketEMA == 1 and crossover > 0  and macd[-1] < 0: position = 1
+        elif marketEMA == -1 and crossover < 0  and macd[-1] > 0: position = -1
+        else: position = 0
+        amount = 50
+        confidence = 0
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            # amount = priceclose / (priceclose - stoploss)
+            if(priceclose - stoploss) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            # amount = priceclose / (stoploss - priceclose)
+            if(stoploss - priceclose) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        ##For test
+        # position = 1
+
+        
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit, confidence]
+
+    def trix200(self,df):
+        df = df.dropna()
+
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
+
+        trixInput = df.head(60)
+        trixInput = trixInput.iloc[::-1]
+        trixOutput = TRIX(trixInput['close'].values, timeperiod = 14)
+
+        ##c. 200EMA
+        emaInput = df.head(200)
+        emaInput = emaInput.iloc[::-1]
+        EMAclose = emaInput['close'].values
+        ema = EMA(EMAclose, timeperiod=200)
+
+        # print("EMA\n", ema[-1])
+
+        ##d. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+        # print("pricehigh\n", pricehigh)
+        # print("pricelow\n", pricelow)
+
+        if trixOutput[-2] < 0 and trixOutput[-1] > 0:
+            crossover = 1
+        elif trixOutput[-2] > 0 and trixOutput[-1] < 0:
+            crossover = -1
+        else: crossover = 0
 
 
-        ##RSI-TYPE
-        ##TO-DO
-
+        if pricelow > ema[-1]: marketEMA = 1
+        elif pricehigh < ema[-1]: marketEMA = -1
+        else: marketEMA = 0
 
         ##OUTPUT
-        if marketEMA == 1 and crossover >= 0: position = 1
-        elif marketEMA == -1 and crossover <=0: position = -1
+        if marketEMA == 1 and crossover > 0: position = 1
+        elif marketEMA == -1 and crossover < 0: position = -1
         else: position = 0
+        amount = 50
+        confidence = 0
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            # amount = priceclose / (priceclose - stoploss)
+            if(priceclose - stoploss) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
 
-        return position
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            # amount = priceclose / (stoploss - priceclose)
+            if(stoploss - priceclose) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit, confidence]
+
+    def macdTRIX(self,df):
+        df = df.dropna()
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
+
+        ##b. MACD
+        macdInput = df.head(34)
+        macdInput = macdInput.iloc[::-1]
+        MACDclose = macdInput['close'].values
+        macd, macdsignal, macdhist = MACDFIX(MACDclose, signalperiod = 9)
+        # print("MACD\n", macd[-1])
+        # print("Signal\n", macdsignal[-1])
+
+        ##c. DelayedMACD
+        delayedmacdInput = df.iloc[1:].head(34)
+        delayedmacdInput = delayedmacdInput.iloc[::-1]
+        delayedMACDclose = delayedmacdInput['close'].values
+        delayedmacd, delayedmacdsignal, delayedmacdhist = MACDFIX(delayedMACDclose, signalperiod = 9)
+
+        trixInput = df.head(60)
+        trixInput = df.iloc[::-1]
+        trixOutput = TRIX(trixInput['close'].values, timeperiod = 20)
 
 
+        # print("EMA\n", ema[-1])
+
+        ##d. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+        # print("pricehigh\n", pricehigh)
+        # print("pricelow\n", pricelow)
+
+        if delayedmacd[-1] < delayedmacdsignal[-1] and macd[-1] > macdsignal[-1] and trixOutput[-1] < 0 : position = 1
+        elif delayedmacd[-1] > delayedmacdsignal[-1] and macd[-1] < macdsignal[-1] and trixOutput[-1] > 0: position = -1
+        else: position = 0
+        amount = 50
+        confidence = 0
+        if position == 1:
+            stoploss = priceclose - 1.05 * atr
+            takeprofit = priceclose + 1.45 * atr
+            # amount = priceclose / (priceclose - stoploss)
+            if(priceclose - stoploss) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        elif position == -1:
+            stoploss = priceclose + 1.05*atr
+            takeprofit = priceclose - 1.45 * atr
+            # amount = priceclose / (stoploss - priceclose)
+            if(stoploss - priceclose) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                pattern, patterntype = check(df.head(20))
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        ##For test
+        # position = 1
+
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit, confidence]
+
+    def bbands200(self,df):
+        df = df.dropna()
+
+        #1. Calculate ATR for potential trade
+        atr = atrcalc.ATRcalc(df)
+
+        pattern, patterntype = check(df.head(20))
+
+        ##b. get BBands
+        bband = df.head(21)
+        bband = bband.iloc[1:]
+        bband = bband.iloc[::-1]
+        bbandInput = bband['close'].values
+        upperband, middleband, lowerband = BBANDS(bbandInput, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+
+        ##c. 200EMA
+        emaInput = df.head(200)
+        emaInput = emaInput.iloc[::-1]
+        EMAclose = emaInput['close'].values
+        ema = EMA(EMAclose, timeperiod=200)
+
+        ##d. current price action
+        priceaction = df.head(1)
+        pricehigh = priceaction['high'].values[0]
+        pricelow = priceaction['low'].values[0]
+        priceclose = priceaction['close'].values[0]
+
+        if pricehigh > upperband[-1]: breakBand = -1
+        elif pricelow < lowerband[-1]: breakBand = 1
+        else: breakBand = 0
+
+        if pricelow > ema[-1]: marketEMA = 1
+        elif pricehigh < ema[-1]: marketEMA = -1
+        else: marketEMA = 0
+
+        ##OUTPUT
+        if marketEMA == 1 and pattern >0 and patterntype == -1 and breakBand == 1: position = 1
+        elif marketEMA == -1 and pattern <0 and patterntype == -1 and breakBand == -1: position = -1
+        else: position = 0
+        amount = 50
+        confidence = 0
+        if position == 1:
+            stoploss = priceclose - (1.05 * atr)
+            takeprofit = priceclose + (1.45 * atr)
+            # amount = priceclose / (priceclose - stoploss)
+            if(stoploss - priceclose) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+                
+        elif position == -1:
+            stoploss = priceclose + (1.05*atr)
+            takeprofit = priceclose - (1.45 * atr)
+            # amount = priceclose / (stoploss - priceclose)
+            if(stoploss - priceclose) * amount < 0.1:
+                position = 0
+                amount = 0
+                stoploss = 0
+                takeprofit = 0
+            else:
+                if position * pattern > 0:
+                    confidence = abs(pattern)
+                elif position * pattern < 0:
+                    confidence = abs(1/pattern)
+                else: confidence = 1
+
+        else:
+            stoploss = 0
+            takeprofit = 0
+            amount = 0
+
+        
+        # ##FOR TEST
+        # position = 1
+        return [position, amount, priceclose, stoploss, takeprofit, confidence]

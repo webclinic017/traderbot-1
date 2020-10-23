@@ -1,4 +1,3 @@
-import json
 import time
 import pandas as pd
 import numpy as np
@@ -9,8 +8,8 @@ import multiprocessing as mp
 
 from scraper import Scraper
 
-if __name__ == '__main__':
-    #############################################
+def mainfn():
+     #############################################
     # 1. TO-DO: REPLACE THIS STATIC tickerName LIST WITH ONE THAT READS A CSV FILE FOR THE tickerNameS
     TickerNames = pd.read_csv('./src/tickerNames/TickerNames.csv')
     
@@ -30,5 +29,8 @@ if __name__ == '__main__':
         
     for process in processes:
         process.join()
+
+if __name__ == '__main__':
+    mainfn()
         
     
